@@ -1,0 +1,35 @@
+{
+  "mcpServers": {
+    "linear": {
+      "command": "op",
+      "args": [
+        "run",
+        "--",
+        "npx",
+        "-y",
+        "@linear/mcp-server"
+      ],
+      "env": {
+        "LINEAR_API_KEY": "op://ch-os-priv/Linear API key ch-os-admin/credential"
+      }
+    },
+    "1password": {
+      "command": "op",
+      "args": [
+        "mcp",
+        "serve"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    }
+  },
+  "enabledPlugins": {
+    "pyright-lsp@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true
+  }
+}
