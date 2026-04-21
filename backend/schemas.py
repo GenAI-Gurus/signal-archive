@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from uuid import UUID
 from pydantic import BaseModel
 
@@ -87,4 +87,4 @@ class ContributorCreated(BaseModel):
 
 class FlagCreate(BaseModel):
     artifact_id: UUID
-    flag_type: str
+    flag_type: Literal["useful", "stale", "weakly_sourced", "wrong"]
