@@ -1,3 +1,4 @@
+import uuid
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -12,7 +13,9 @@ async def find_or_create_canonical(
     summary: str,
 ) -> tuple[UUID, bool]:
     """Return (canonical_question_id, was_created)."""
-    vector_literal = f"[{','.join(str(v) for v in embedding)}]"
+    if not all(isinstance(v, (int, float)) for v in embedding):
+        raise ValueError("Embedding must contain only numeric values")
+    vector_literal = f"[{','.join(str(float(v)) for v in embedding)}]"
     result = await db.execute(text(f"""
         SELECT id, title, 1 - (embedding <=> '{vector_literal}'::vector) AS similarity
         FROM canonical_questions
@@ -31,6 +34,7 @@ async def find_or_create_canonical(
         return canonical_id, False
 
     canonical = CanonicalQuestion(
+        id=uuid.uuid4(),
         title=question,
         synthesized_summary=summary,
         embedding=embedding,

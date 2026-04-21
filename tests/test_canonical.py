@@ -37,3 +37,4 @@ async def test_creates_new_canonical_when_no_match():
         summary="Overview of quantum computing"
     )
     assert created is True
+    assert result is not None
