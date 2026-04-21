@@ -1,4 +1,3 @@
-import hashlib
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,15 +8,12 @@ from models import ResearchArtifact, Contributor
 from schemas import ArtifactSubmit, ArtifactResponse
 from embeddings import get_embedding
 from canonical import find_or_create_canonical
-from config import settings
+from auth import hash_api_key
 
 router = APIRouter(tags=["artifacts"])
 
-def _hash_key(api_key: str) -> str:
-    return hashlib.sha256((api_key + settings.api_key_salt).encode()).hexdigest()
-
 async def get_contributor_from_key(api_key: str, db: AsyncSession) -> Contributor:
-    key_hash = _hash_key(api_key)
+    key_hash = hash_api_key(api_key)
     result = await db.execute(select(Contributor).where(Contributor.api_key_hash == key_hash))
     contributor = result.scalar_one_or_none()
     if not contributor:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Query, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from database import get_db
@@ -15,7 +15,7 @@ async def search_archive(
 ):
     embedding = await get_embedding(q)
     if not all(isinstance(v, (int, float)) for v in embedding):
-        raise ValueError("Invalid embedding returned")
+        raise HTTPException(status_code=502, detail="Invalid embedding returned by upstream service")
     vector_literal = f"[{','.join(str(float(v)) for v in embedding)}]"
     result = await db.execute(text(f"""
         SELECT

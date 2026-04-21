@@ -1,4 +1,3 @@
-import hashlib
 import secrets
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,12 +5,9 @@ from sqlalchemy import select
 from database import get_db
 from models import Contributor
 from schemas import ContributorCreate, ContributorCreated, ContributorResponse
-from config import settings
+from auth import hash_api_key
 
 router = APIRouter(tags=["contributors"])
-
-def _hash_key(api_key: str) -> str:
-    return hashlib.sha256((api_key + settings.api_key_salt).encode()).hexdigest()
 
 @router.post("", status_code=201, response_model=ContributorCreated)
 async def create_contributor(body: ContributorCreate, db: AsyncSession = Depends(get_db)):
@@ -22,7 +18,7 @@ async def create_contributor(body: ContributorCreate, db: AsyncSession = Depends
     contributor = Contributor(
         handle=body.handle,
         display_name=body.display_name,
-        api_key_hash=_hash_key(api_key),
+        api_key_hash=hash_api_key(api_key),
     )
     db.add(contributor)
     await db.commit()
