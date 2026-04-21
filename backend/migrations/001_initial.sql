@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS canonical_questions (
 
 CREATE INDEX IF NOT EXISTS canonical_questions_embedding_idx
     ON canonical_questions USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
+    WITH (lists = 20);
 
 -- Research Artifacts
 CREATE TABLE IF NOT EXISTS research_artifacts (
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS research_artifacts (
 
 CREATE INDEX IF NOT EXISTS research_artifacts_embedding_idx
     ON research_artifacts USING ivfflat (embedding vector_cosine_ops)
-    WITH (lists = 100);
+    WITH (lists = 20);
 
 CREATE INDEX IF NOT EXISTS research_artifacts_canonical_idx
     ON research_artifacts (canonical_question_id);
