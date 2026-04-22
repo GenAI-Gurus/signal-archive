@@ -14,6 +14,9 @@ class Contributor(Base):
     total_contributions = Column(Integer, default=0)
     total_reuse_count = Column(Integer, default=0)
     reputation_score = Column(Float, default=0.0)
+    email = Column(String, unique=True, nullable=True)
+    email_verified = Column(Boolean, default=False, nullable=False)
+    api_key_enc = Column(Text, nullable=True)  # Fernet-encrypted copy of api_key
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
 
 class CanonicalQuestion(Base):
@@ -64,4 +67,22 @@ class ReuseEvent(Base):
     canonical_question_id = Column(UUID(as_uuid=True), ForeignKey("canonical_questions.id"), nullable=False)
     artifact_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=True)
     reused_by = Column(String)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+class MagicLinkToken(Base):
+    __tablename__ = "magic_link_tokens"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String, nullable=False, index=True)
+    token_hash = Column(String, nullable=False, unique=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used = Column(Boolean, default=False, nullable=False)
+    cli_session_id = Column(UUID(as_uuid=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+
+class CliSession(Base):
+    __tablename__ = "cli_sessions"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    api_key = Column(String, nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    claimed = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
