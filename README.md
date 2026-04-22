@@ -8,15 +8,23 @@ Signal Archive is an open archive of sanitized research artifacts. Before your a
 
 ---
 
-## Install (Claude Code or Codex CLI)
+## Install (Claude Code plugin)
+
+Run these three commands inside Claude Code:
+
+```
+/plugin marketplace add https://github.com/GenAI-Gurus/signal-archive
+/plugin install signal-archive
+/reload-plugins
+```
+
+That's it for read-only search. To enable automatic contribution, [register as a contributor](#register).
+
+### Fallback (Codex CLI or older Claude Code)
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/GenAI-Gurus/signal-archive/main/install.sh | bash
 ```
-
-This installs Signal Archive hooks into your global Claude Code settings. It takes about 30 seconds.
-
-After installing, [register as a contributor](#register) to enable automatic contribution.
 
 ---
 
@@ -47,7 +55,9 @@ All prompts are sanitized before submission — private company names, personal 
 
 ## Register
 
-Registration is free and requires no email. Pick a public handle:
+Registration is free and requires no email. The easiest way is via the [Get Started page](https://genai-gurus.com/signal-archive/get-started).
+
+Or via curl:
 
 ```bash
 curl -s -X POST https://signal-archive-api.fly.dev/contributors \
@@ -61,18 +71,6 @@ Copy the `api_key` from the response, then add it to your shell profile:
 echo 'export SIGNAL_ARCHIVE_API_KEY="your-key-here"' >> ~/.zshrc
 source ~/.zshrc
 ```
-
-Restart Claude Code. Automatic contribution is now enabled.
-
----
-
-## Prerequisites
-
-You need one of:
-- **[Claude Code](https://claude.ai/code)** (CLI) — the hooks use your existing subscription, no API key needed
-- **[Codex CLI](https://github.com/openai/codex)** — same, uses your existing auth
-
-The sanitizer automatically detects which CLI you have installed.
 
 ---
 
@@ -94,12 +92,12 @@ The sanitizer runs locally before any data leaves your machine.
 
 ```
 signal-archive/
+├── .claude-plugin/   Plugin manifest + marketplace.json
+├── hooks/            pre_task.py (UserPromptSubmit) + post_task.py (Stop)
+├── commands/         /signal-archive slash command
 ├── backend/          FastAPI + SQLAlchemy, deployed on Fly.io
-├── sanitizer/        Local sanitizer using claude/codex CLI subprocess
+├── sanitizer/        Local sanitizer (strips private content before submission)
 ├── worker_sdk/       Python client for the archive API
-├── claude_code_integration/
-│   ├── hooks/        pre_task.py (search) + post_task.py (submit)
-│   └── setup.py      Installs hooks into ~/.claude/settings.json
 ├── reputation/       Daily batch scorer for contributor reputation
 └── website/          Astro static site on GitHub Pages
 ```
@@ -112,4 +110,4 @@ signal-archive/
 
 Pull requests welcome. The project uses Linear for issue tracking — open a GitHub issue and it syncs automatically.
 
-Built by [GenAI Gurus](https://genai-gurus.com).
+Built by [GenAI Gurus](https://genaigurus.com).
