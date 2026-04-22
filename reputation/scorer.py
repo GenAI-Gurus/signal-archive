@@ -6,14 +6,16 @@ def compute_reputation_score(
     weakly_sourced_flags: int,
     wrong_flags: int,
 ) -> float:
+    """Score in [0, 100]. Reuse ratio of 10× contributions maxes out; flag quality adds up to 5 pts."""
     if total_contributions == 0:
         return 0.0
 
     reuse_ratio = total_reuse_count / total_contributions
     total_flags = useful_flags + stale_flags + weakly_sourced_flags + wrong_flags
     if total_flags == 0:
-        flag_ratio = 0.5
+        flag_ratio = 0.0  # no evidence yet; flag component contributes nothing
     else:
+        # (2*useful + stale + weak) / (2*total) — always in [0, 1]
         weighted = useful_flags - wrong_flags
         flag_ratio = (weighted + total_flags) / (2 * total_flags)
 

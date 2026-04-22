@@ -53,3 +53,15 @@ def test_score_is_clamped_to_0_100():
         wrong_flags=0,
     )
     assert 0.0 <= score <= 100.0
+
+def test_no_flags_contributor_scores_reuse_only():
+    score = compute_reputation_score(
+        total_contributions=5,
+        total_reuse_count=10,
+        useful_flags=0,
+        stale_flags=0,
+        weakly_sourced_flags=0,
+        wrong_flags=0,
+    )
+    # reuse_ratio=2.0 → raw=20.0, flag component=0 since no flags
+    assert score == pytest.approx(20.0)
