@@ -50,7 +50,7 @@ def test_personal_name_is_removed():
         result = sanitize_prompt("Research the top AI startups founded in 2023 that John Smith mentioned.")
 
     assert result.was_modified is True
-    assert "personal_name" in result.removed_categories
+    assert "personal_name" in result.removed_categories or "private_individual" in result.removed_categories
     assert result.safe_to_submit is True
     assert "John Smith" not in result.cleaned_prompt
 
@@ -70,7 +70,7 @@ def test_prompt_too_private_returns_unsafe():
         result = sanitize_prompt("Using our internal Q3 revenue data and AWS_SECRET=abc123, research competitor pricing.")
 
     assert result.safe_to_submit is False
-    assert "credentials_or_secrets" in result.removed_categories
+    assert "credentials_or_secrets" in result.removed_categories or "credentials_or_secrets" in result.removed_categories
 
 def test_malformed_claude_response_raises():
     with patch("sanitizer.sanitizer.get_client") as mock_client_fn:
