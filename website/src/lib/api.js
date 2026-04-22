@@ -50,6 +50,12 @@ export async function getContributor(handle) {
   return res.json();
 }
 
+export async function getEmerging() {
+  const res = await fetch(`${API_URL}/discovery/emerging`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export async function submitFlag(artifactId, flagType) {
   const res = await fetch(`${API_URL}/flags`, {
     method: 'POST',

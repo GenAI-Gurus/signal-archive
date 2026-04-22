@@ -37,6 +37,36 @@ async def top_reused(db: AsyncSession = Depends(get_db)):
         for r in rows
     ]
 
+@router.get("/emerging")
+async def emerging_topics(db: AsyncSession = Depends(get_db)):
+    """Canonical questions created in the last 14 days with growth signals."""
+    result = await db.execute(text("""
+        SELECT
+            cq.id,
+            cq.title,
+            cq.synthesized_summary,
+            cq.artifact_count,
+            cq.reuse_count,
+            (cq.artifact_count * 2 + cq.reuse_count * 3) AS growth_score
+        FROM canonical_questions cq
+        WHERE cq.created_at >= NOW() - INTERVAL '14 days'
+          AND (cq.artifact_count >= 2 OR cq.reuse_count >= 1)
+        ORDER BY growth_score DESC, cq.created_at DESC
+        LIMIT 20
+    """))
+    rows = result.fetchall()
+    return [
+        {
+            "canonical_question_id": str(r[0]),
+            "title": r[1],
+            "summary": r[2],
+            "artifact_count": r[3],
+            "reuse_count": r[4],
+            "growth_score": r[5],
+        }
+        for r in rows
+    ]
+
 @router.get("/leaderboard")
 async def leaderboard(db: AsyncSession = Depends(get_db)):
     result = await db.execute(text("""

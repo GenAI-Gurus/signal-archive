@@ -15,10 +15,15 @@ import Base from '../layouts/Base.astro';
       <div id="reused"></div>
     </section>
   </div>
+
+  <section class="mt-12">
+    <h2 class="text-xl font-semibold text-white mb-4">🌱 Emerging topics (last 14 days)</h2>
+    <div id="emerging"></div>
+  </section>
 </Base>
 
 <script>
-  import { getWeeklyResearch, getTopReused, el, link, BASE } from '../lib/api.js';
+  import { getWeeklyResearch, getTopReused, getEmerging, el, link, BASE } from '../lib/api.js';
 
   function renderRows(containerId, items, hrefFn, titleFn, badgeFn) {
     const container = document.getElementById(containerId);
@@ -41,4 +46,26 @@ import Base from '../layouts/Base.astro';
   getTopReused().then(d =>
     renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`)
   );
+
+  getEmerging().then(items => {
+    const container = document.getElementById('emerging');
+    if (!items.length) {
+      container.appendChild(el('p', 'text-gray-500 italic text-sm', 'No emerging topics yet.'));
+      return;
+    }
+    const grid = el('div', 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4');
+    items.slice(0, 9).forEach(item => {
+      const card = link(
+        `${BASE}/canonical/?id=${item.canonical_question_id}`,
+        'block bg-gray-900 border border-gray-800 hover:border-brand-500/40 rounded-xl p-4 transition-all'
+      );
+      card.appendChild(el('p', 'text-sm text-gray-200 font-medium mb-2', item.title));
+      const meta = el('div', 'flex gap-3 text-xs text-gray-600');
+      meta.appendChild(el('span', null, `📄 ${item.artifact_count}`));
+      if (item.reuse_count > 0) meta.appendChild(el('span', null, `♻️ ${item.reuse_count}`));
+      card.appendChild(meta);
+      grid.appendChild(card);
+    });
+    container.appendChild(grid);
+  });
 </script>
