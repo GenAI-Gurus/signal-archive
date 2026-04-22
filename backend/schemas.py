@@ -90,3 +90,27 @@ class ContributorCreated(BaseModel):
 class FlagCreate(BaseModel):
     artifact_id: UUID
     flag_type: Literal["useful", "stale", "weakly_sourced", "wrong"]
+
+class MagicLinkRequest(BaseModel):
+    email: str
+    cli_session_id: Optional[str] = None
+
+class MagicLinkVerify(BaseModel):
+    token: str
+    handle: Optional[str] = None
+    display_name: Optional[str] = None
+
+class AuthResponse(BaseModel):
+    jwt: str
+    handle: str
+    email: str
+    is_new: bool
+    api_key: str
+
+class CliSessionResponse(BaseModel):
+    session_id: str
+    login_url: str
+
+class CliSessionPoll(BaseModel):
+    ready: bool
+    api_key: Optional[str] = None
