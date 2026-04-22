@@ -13,6 +13,8 @@ class ClarifyingQA(BaseModel):
     answer: str
 
 class ArtifactSubmit(BaseModel):
+    model_config = {"protected_namespaces": ()}
+
     cleaned_question: str
     cleaned_prompt: str
     clarifying_qa: list[ClarifyingQA] = []
@@ -27,6 +29,8 @@ class ArtifactSubmit(BaseModel):
     version: Optional[str] = None
 
 class ArtifactResponse(BaseModel):
+    model_config = {"from_attributes": True, "protected_namespaces": ()}
+
     id: UUID
     canonical_question_id: Optional[UUID] = None
     contributor_handle: Optional[str] = None
@@ -44,8 +48,6 @@ class ArtifactResponse(BaseModel):
     weakly_sourced_count: int
     wrong_count: int
     created_at: datetime
-
-    model_config = {"from_attributes": True}
 
 class CanonicalQuestionResponse(BaseModel):
     id: UUID
