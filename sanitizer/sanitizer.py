@@ -1,20 +1,26 @@
 import json
-from .client import get_client
+import subprocess
+from .client import detect_cli
 from .prompt import SYSTEM_PROMPT
 from .models import SanitizationResult
 
-MODEL = "claude-sonnet-4-6"
-MAX_TOKENS = 1024
-
 def sanitize_prompt(prompt: str) -> SanitizationResult:
-    client = get_client()
-    response = client.messages.create(
-        model=MODEL,
-        max_tokens=MAX_TOKENS,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": prompt}],
+    cli = detect_cli()
+    full_prompt = (
+        f"{SYSTEM_PROMPT}\n\n"
+        f"Sanitize the following research prompt and return only the JSON:\n\n"
+        f"{prompt}"
     )
-    raw = response.content[0].text
+    result = subprocess.run(
+        [cli, "-p", full_prompt],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"{cli} CLI error: {result.stderr.strip()}")
+
+    raw = result.stdout.strip()
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
