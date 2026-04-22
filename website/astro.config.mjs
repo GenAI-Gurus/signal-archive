@@ -3,7 +3,7 @@ import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
   output: 'static',
-  site: 'https://GenAI-Gurus.github.io',
+  site: 'https://genai-gurus.com',
   base: '/signal-archive',
   integrations: [tailwind()],
 });
