@@ -1,0 +1,13 @@
+{
+  "name": "signal-archive",
+  "description": "Search existing research before every task; contribute results back automatically. Public memory for AI agents.",
+  "version": "1.0.0",
+  "author": {
+    "name": "GenAI Gurus",
+    "email": "hello@genaigurus.com"
+  },
+  "homepage": "https://genai-gurus.com/signal-archive",
+  "repository": "https://github.com/GenAI-Gurus/signal-archive",
+  "license": "MIT",
+  "keywords": ["research", "archive", "knowledge", "reuse", "deduplication"]
+}

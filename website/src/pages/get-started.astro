@@ -7,7 +7,7 @@ import Base from '../layouts/Base.astro';
     <div class="mb-10">
       <h1 class="text-3xl font-bold text-white mb-3">Get Started</h1>
       <p class="text-xl text-gray-400">
-        Signal Archive hooks into your Claude Code or Codex CLI. Before each research task it checks
+        Signal Archive hooks into your Claude Code. Before each research task it checks
         what's already been answered. After each task it contributes your result back — automatically.
       </p>
     </div>
@@ -15,35 +15,34 @@ import Base from '../layouts/Base.astro';
     <!-- Prerequisites -->
     <div class="mb-10 bg-gray-900 border border-gray-800 rounded-xl p-6">
       <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Prerequisites</h2>
-      <p class="text-gray-300 text-sm mb-3">You need one of these installed:</p>
+      <p class="text-gray-300 text-sm mb-3">You need Claude Code installed:</p>
       <div class="flex gap-4 flex-wrap">
         <a href="https://claude.ai/code" target="_blank"
            class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-3 transition-colors">
           <span class="text-brand-400 font-bold text-sm">Claude Code</span>
           <span class="text-gray-500 text-xs">claude.ai/code</span>
         </a>
-        <a href="https://github.com/openai/codex" target="_blank"
-           class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-3 transition-colors">
-          <span class="text-green-400 font-bold text-sm">Codex CLI</span>
-          <span class="text-gray-500 text-xs">github.com/openai/codex</span>
-        </a>
       </div>
-      <p class="text-xs text-gray-500 mt-3">Uses your existing subscription auth — no separate API key needed for the AI.</p>
+      <p class="text-xs text-gray-500 mt-3">Uses your existing Claude subscription — no separate API key needed.</p>
     </div>
 
     <!-- Step 1 -->
     <div class="mb-8">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">1</div>
-        <h2 class="text-lg font-semibold text-white">Install</h2>
+        <h2 class="text-lg font-semibold text-white">Install the plugin</h2>
       </div>
-      <p class="text-gray-400 text-sm mb-3 ml-11">Run this in your terminal. Takes about 30 seconds.</p>
-      <div class="ml-11">
+      <p class="text-gray-400 text-sm mb-3 ml-11">Run these two commands inside Claude Code:</p>
+      <div class="ml-11 space-y-3">
         <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
-          <code id="install-cmd" class="text-green-400 select-all">curl -fsSL https://raw.githubusercontent.com/GenAI-Gurus/signal-archive/main/install.sh | bash</code>
-          <button data-copy="install-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+          <code id="plugin-add-cmd" class="text-green-400 select-all">/plugin marketplace add https://github.com/GenAI-Gurus/signal-archive</code>
+          <button data-copy="plugin-add-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
         </div>
-        <p class="text-xs text-gray-600 mt-2">Clones to <code class="text-gray-500">~/.signal-archive/</code> and installs hooks into your global Claude Code settings.</p>
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
+          <code id="plugin-install-cmd" class="text-green-400 select-all">/plugin install signal-archive</code>
+          <button data-copy="plugin-install-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+        </div>
+        <p class="text-xs text-gray-600">That's it for read-only search. Complete step 2 to enable automatic contribution.</p>
       </div>
     </div>
 
@@ -107,9 +106,9 @@ import Base from '../layouts/Base.astro';
     <div class="mb-12">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">3</div>
-        <h2 class="text-lg font-semibold text-white">Restart Claude Code</h2>
+        <h2 class="text-lg font-semibold text-white">Done</h2>
       </div>
-      <p class="text-gray-400 text-sm ml-11">That's it. Signal Archive is now active for every research task.</p>
+      <p class="text-gray-400 text-sm ml-11">Signal Archive is now active. Every research task is automatically searched and (if you registered) contributed to the archive.</p>
     </div>
 
     <!-- What happens -->

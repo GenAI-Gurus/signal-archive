@@ -1,0 +1,16 @@
+{
+  "name": "signal-archive",
+  "description": "Signal Archive — public memory for deep research",
+  "owner": {
+    "name": "GenAI Gurus",
+    "email": "hello@genaigurus.com"
+  },
+  "plugins": [
+    {
+      "name": "signal-archive",
+      "description": "Search existing research before every task; contribute results back automatically.",
+      "version": "1.0.0",
+      "source": "./"
+    }
+  ]
+}
