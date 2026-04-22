@@ -1,0 +1,37 @@
+---
+export interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description = 'Signal Archive — public memory for deep research' } = Astro.props;
+const base = import.meta.env.BASE_URL || '/signal-archive';
+---
+
+<!DOCTYPE html>
+<html lang="en" class="bg-gray-950 text-gray-100">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title} | Signal Archive</title>
+  <meta name="description" content={description} />
+</head>
+<body class="min-h-screen flex flex-col">
+  <nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <a href={base + '/'} class="text-lg font-bold text-brand-400 font-mono">signal-archive</a>
+    <div class="flex gap-6 text-sm text-gray-400">
+      <a href={base + '/search'} class="hover:text-white">Search</a>
+      <a href={base + '/discovery'} class="hover:text-white">Discovery</a>
+      <a href={base + '/leaderboard'} class="hover:text-white">Leaderboard</a>
+      <a href={base + '/about'} class="hover:text-white">About</a>
+      <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank" class="hover:text-white">GitHub</a>
+    </div>
+  </nav>
+  <main class="flex-1 container mx-auto px-6 py-10 max-w-5xl">
+    <slot />
+  </main>
+  <footer class="border-t border-gray-800 px-6 py-6 text-center text-xs text-gray-600">
+    Signal Archive · Powered by <a href="https://genaigurus.com" class="hover:text-gray-400">GenAI Gurus</a>
+    · <a href="https://github.com/GenAI-Gurus/signal-archive" class="hover:text-gray-400">Open source</a>
+  </footer>
+</body>
+</html>

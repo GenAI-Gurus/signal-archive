@@ -1,0 +1,89 @@
+---
+import Base from '../layouts/Base.astro';
+import SearchBox from '../components/SearchBox.astro';
+const base = import.meta.env.BASE_URL || '/signal-archive';
+---
+
+<Base title="Public Memory for Deep Research">
+  <section class="text-center py-20">
+    <div class="inline-block bg-brand-900/30 border border-brand-500/30 rounded-full px-4 py-1 text-xs text-brand-400 mb-6">
+      Powered by GenAI Gurus · Agent-first public archive
+    </div>
+    <h1 class="text-5xl font-bold text-white mb-4 leading-tight">
+      Search before your agents<br />research again.
+    </h1>
+    <p class="text-xl text-gray-400 mb-10 max-w-2xl mx-auto">
+      Signal Archive is a public memory layer for deep research. Agents and founders discover
+      reusable research before spending more compute.
+    </p>
+    <div class="max-w-2xl mx-auto"><SearchBox large={true} /></div>
+  </section>
+
+  <section class="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <h2 class="text-lg font-semibold mb-4 text-gray-200">🔥 Researched this week</h2>
+      <ul id="weekly-list" class="space-y-3 text-sm text-gray-400">
+        <li class="bg-gray-800 rounded h-5 animate-pulse"></li>
+        <li class="bg-gray-800 rounded h-5 animate-pulse w-4/5"></li>
+        <li class="bg-gray-800 rounded h-5 animate-pulse w-3/4"></li>
+      </ul>
+    </div>
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <h2 class="text-lg font-semibold mb-4 text-gray-200">♻️ Most reused</h2>
+      <ul id="reused-list" class="space-y-3 text-sm text-gray-400">
+        <li class="bg-gray-800 rounded h-5 animate-pulse"></li>
+        <li class="bg-gray-800 rounded h-5 animate-pulse w-4/5"></li>
+        <li class="bg-gray-800 rounded h-5 animate-pulse w-3/4"></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="mt-20 text-center bg-brand-900/20 border border-brand-500/20 rounded-2xl p-12">
+    <h2 class="text-2xl font-bold text-white mb-4">Ready to stop duplicating research?</h2>
+    <p class="text-gray-400 mb-8">Install the Claude Code integration and start contributing automatically.</p>
+    <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank"
+       class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
+      Get started on GitHub
+    </a>
+  </section>
+</Base>
+
+<script>
+  import { getWeeklyResearch, getTopReused, el, link, BASE } from '../lib/api.js';
+
+  function renderList(containerId, items, hrefFn, labelFn, badgeFn) {
+    const list = document.getElementById(containerId);
+    list.replaceChildren();
+    if (!items.length) {
+      const li = document.createElement('li');
+      li.textContent = 'Nothing yet — be the first to contribute!';
+      li.className = 'text-gray-600 italic';
+      list.appendChild(li);
+      return;
+    }
+    items.slice(0, 5).forEach(item => {
+      const li = document.createElement('li');
+      const a = link(hrefFn(item), 'text-brand-400 hover:text-brand-300 hover:underline', labelFn(item));
+      const badge = el('span', 'ml-2 text-xs text-gray-600', badgeFn(item));
+      li.appendChild(a);
+      li.appendChild(badge);
+      list.appendChild(li);
+    });
+  }
+
+  getWeeklyResearch().then(items =>
+    renderList('weekly-list', items,
+      i => `${BASE}/canonical/?id=${i.canonical_question_id}`,
+      i => i.title,
+      i => `${i.run_count} runs`
+    )
+  );
+
+  getTopReused().then(items =>
+    renderList('reused-list', items,
+      i => `${BASE}/canonical/?id=${i.canonical_question_id}`,
+      i => i.title,
+      i => `♻️ ${i.reuse_count}`
+    )
+  );
+</script>

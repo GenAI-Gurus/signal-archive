@@ -1,0 +1,44 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Discovery">
+  <h1 class="text-3xl font-bold text-white mb-2">Discovery</h1>
+  <p class="text-gray-400 mb-10">What people are researching and which artifacts are most reused.</p>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-4">🔥 Researched this week</h2>
+      <div id="weekly"></div>
+    </section>
+    <section>
+      <h2 class="text-xl font-semibold text-white mb-4">♻️ Most reused</h2>
+      <div id="reused"></div>
+    </section>
+  </div>
+</Base>
+
+<script>
+  import { getWeeklyResearch, getTopReused, el, link, BASE } from '../lib/api.js';
+
+  function renderRows(containerId, items, hrefFn, titleFn, badgeFn) {
+    const container = document.getElementById(containerId);
+    if (!items.length) {
+      container.appendChild(el('p', 'text-gray-500 italic text-sm', 'Nothing yet.'));
+      return;
+    }
+    items.slice(0, 15).forEach((item, i) => {
+      const row = el('div', 'flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 mb-2');
+      row.appendChild(el('span', 'text-xs font-mono text-gray-600 w-5', String(i + 1)));
+      row.appendChild(link(hrefFn(item), 'flex-1 text-sm text-gray-300 hover:text-white hover:underline', titleFn(item)));
+      row.appendChild(el('span', 'text-xs text-gray-600', badgeFn(item)));
+      container.appendChild(row);
+    });
+  }
+
+  getWeeklyResearch().then(d =>
+    renderRows('weekly', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `${i.run_count} runs`)
+  );
+  getTopReused().then(d =>
+    renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`)
+  );
+</script>
