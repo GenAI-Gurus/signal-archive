@@ -1,0 +1,147 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Get Started" description="Install Signal Archive in 3 steps — works with Claude Code and Codex CLI">
+  <div class="max-w-3xl mx-auto">
+    <div class="mb-10">
+      <h1 class="text-3xl font-bold text-white mb-3">Get Started</h1>
+      <p class="text-xl text-gray-400">
+        Signal Archive hooks into your Claude Code or Codex CLI. Before each research task it checks
+        what's already been answered. After each task it contributes your result back — automatically.
+      </p>
+    </div>
+
+    <!-- Prerequisites -->
+    <div class="mb-10 bg-gray-900 border border-gray-800 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Prerequisites</h2>
+      <p class="text-gray-300 text-sm mb-3">You need one of these installed:</p>
+      <div class="flex gap-4 flex-wrap">
+        <a href="https://claude.ai/code" target="_blank"
+           class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-3 transition-colors">
+          <span class="text-brand-400 font-bold text-sm">Claude Code</span>
+          <span class="text-gray-500 text-xs">claude.ai/code</span>
+        </a>
+        <a href="https://github.com/openai/codex" target="_blank"
+           class="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-4 py-3 transition-colors">
+          <span class="text-green-400 font-bold text-sm">Codex CLI</span>
+          <span class="text-gray-500 text-xs">github.com/openai/codex</span>
+        </a>
+      </div>
+      <p class="text-xs text-gray-500 mt-3">Uses your existing subscription auth — no separate API key needed for the AI.</p>
+    </div>
+
+    <!-- Step 1 -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">1</div>
+        <h2 class="text-lg font-semibold text-white">Install</h2>
+      </div>
+      <p class="text-gray-400 text-sm mb-3 ml-11">Run this in your terminal. Takes about 30 seconds.</p>
+      <div class="ml-11">
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
+          <code id="install-cmd" class="text-green-400 select-all">curl -fsSL https://raw.githubusercontent.com/GenAI-Gurus/signal-archive/main/install.sh | bash</code>
+          <button data-copy="install-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+        </div>
+        <p class="text-xs text-gray-600 mt-2">Clones to <code class="text-gray-500">~/.signal-archive/</code> and installs hooks into your global Claude Code settings.</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">2</div>
+        <h2 class="text-lg font-semibold text-white">Register</h2>
+      </div>
+      <p class="text-gray-400 text-sm mb-3 ml-11">Free, no email. Pick a public handle for the leaderboard.</p>
+      <div class="ml-11 space-y-3">
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
+          <code id="register-cmd" class="text-green-400 select-all whitespace-pre">curl -s -X POST https://signal-archive-api.fly.dev/contributors \
+  -H "Content-Type: application/json" \
+  -d '&#123;"handle": "your-handle"&#125;' | python3 -m json.tool</code>
+          <button data-copy="register-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+        </div>
+        <p class="text-gray-400 text-sm">Copy the <code class="bg-gray-800 px-1 py-0.5 rounded text-brand-400 text-xs">api_key</code> from the response, then:</p>
+        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
+          <code id="export-cmd" class="text-green-400 select-all whitespace-pre">echo 'export SIGNAL_ARCHIVE_API_KEY="your-key-here"' >> ~/.zshrc
+source ~/.zshrc</code>
+          <button data-copy="export-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="mb-12">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">3</div>
+        <h2 class="text-lg font-semibold text-white">Restart Claude Code</h2>
+      </div>
+      <p class="text-gray-400 text-sm ml-11">That's it. Signal Archive is now active for every research task.</p>
+    </div>
+
+    <!-- What happens -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">What happens automatically</h2>
+      <div class="space-y-4">
+        <div class="flex gap-4">
+          <div class="text-xl shrink-0">🔍</div>
+          <div>
+            <div class="text-white text-sm font-medium mb-1">Before every task</div>
+            <div class="text-gray-400 text-sm">Signal Archive searches for similar existing research. If matches are found, they're shown to you with similarity scores — you can reuse instead of re-running.</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="text-xl shrink-0">🧹</div>
+          <div>
+            <div class="text-white text-sm font-medium mb-1">Privacy-first sanitization</div>
+            <div class="text-gray-400 text-sm">Your prompt is cleaned locally before anything leaves your machine. Private names, company context, and credentials are removed or substituted.</div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <div class="text-xl shrink-0">📤</div>
+          <div>
+            <div class="text-white text-sm font-medium mb-1">After each research task</div>
+            <div class="text-gray-400 text-sm">The result is contributed to the public archive. Your handle gets credit. Reuse counts build your reputation on the leaderboard.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Privacy note -->
+    <div class="bg-yellow-900/10 border border-yellow-700/20 rounded-xl p-5 mb-8 text-sm text-yellow-200/60">
+      <span class="text-yellow-400 font-semibold">Privacy: </span>
+      The sanitizer runs on your machine before any data is sent. Only public-safe research is accepted.
+      Public figures by name are fine. Private individuals, "our company" references, and relative dates are
+      stripped. You can review what's submitted in the archive.
+    </div>
+
+    <!-- Links -->
+    <div class="flex gap-4 flex-wrap">
+      <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank"
+         class="bg-gray-800 hover:bg-gray-700 text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
+        View on GitHub →
+      </a>
+      <a href="/signal-archive/search"
+         class="border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
+        Browse the archive
+      </a>
+      <a href="/signal-archive/leaderboard"
+         class="border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white px-5 py-2.5 rounded-lg text-sm transition-colors">
+        Leaderboard
+      </a>
+    </div>
+  </div>
+</Base>
+
+<script>
+  document.querySelectorAll('.copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-copy');
+      const text = document.getElementById(targetId).textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'copied';
+        setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+      });
+    });
+  });
+</script>

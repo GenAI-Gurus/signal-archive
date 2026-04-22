@@ -21,10 +21,10 @@ def _format_search_results(matches: list[SearchMatch]) -> str:
     if not matches:
         return "No similar research found in the archive. This will be a fresh run."
     lines = ["**Signal Archive — Existing Research Found:**\n"]
-    base_url = os.environ.get("SIGNAL_ARCHIVE_URL", "https://signal-archive.github.io")
+    base_url = os.environ.get("SIGNAL_ARCHIVE_URL", "https://genai-gurus.com/signal-archive")
     for i, m in enumerate(matches, 1):
         pct = int(m.similarity * 100)
-        lines.append(f"{i}. [{m.title}]({base_url}/canonical/{m.canonical_question_id})")
+        lines.append(f"{i}. [{m.title}]({base_url}/canonical/?id={m.canonical_question_id})")
         if m.synthesized_summary:
             lines.append(f"   > {m.synthesized_summary[:150]}...")
         lines.append(f"   Similarity: {pct}% | Artifacts: {m.artifact_count} | Reused: {m.reuse_count}x\n")
