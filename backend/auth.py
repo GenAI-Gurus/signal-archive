@@ -10,6 +10,9 @@ from config import settings
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = 30
 
+if settings.resend_api_key:
+    resend.api_key = settings.resend_api_key
+
 
 def hash_api_key(api_key: str) -> str:
     return hashlib.sha256((api_key + settings.api_key_salt).encode()).hexdigest()
@@ -60,10 +63,11 @@ def require_jwt(authorization: Optional[str] = Header(default=None)) -> dict:
 
 def send_magic_link(email: str, magic_url: str) -> None:
     """Send magic link email via Resend. Prints to stdout in dev (empty RESEND_API_KEY)."""
+    if not magic_url.startswith("https://"):
+        raise ValueError(f"magic_url must use https: {magic_url!r}")
     if not settings.resend_api_key:
         print(f"[DEV] Magic link for {email}: {magic_url}")
         return
-    resend.api_key = settings.resend_api_key
     resend.Emails.send({
         "from": "Signal Archive <noreply@genai-gurus.com>",
         "to": [email],

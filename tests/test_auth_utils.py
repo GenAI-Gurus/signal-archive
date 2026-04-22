@@ -5,28 +5,35 @@ os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
 os.environ.setdefault("OPENAI_API_KEY", "x")
 os.environ.setdefault("API_KEY_SALT", "x")
 os.environ.setdefault("JWT_SECRET", "test-secret")
-os.environ.setdefault("FERNET_KEY", "")
+os.environ.setdefault("FERNET_KEY", "x")
+os.environ.setdefault("RESEND_API_KEY", "")
 
 from cryptography.fernet import Fernet
-TEST_FERNET_KEY = Fernet.generate_key().decode()
-os.environ["FERNET_KEY"] = TEST_FERNET_KEY
+from jose import JWTError
+import pytest
 
 from auth import create_jwt, verify_jwt, encrypt_api_key, decrypt_api_key
+import auth as auth_module
 
-def test_jwt_roundtrip():
+
+def test_jwt_roundtrip(monkeypatch):
+    monkeypatch.setattr(auth_module.settings, "jwt_secret", "test-secret")
     token = create_jwt(sub="user-123", handle="alice", email="alice@example.com")
     payload = verify_jwt(token)
     assert payload["sub"] == "user-123"
     assert payload["handle"] == "alice"
     assert payload["email"] == "alice@example.com"
 
-def test_jwt_invalid_raises():
-    import pytest
-    from jose import JWTError
+
+def test_jwt_invalid_raises(monkeypatch):
+    monkeypatch.setattr(auth_module.settings, "jwt_secret", "test-secret")
     with pytest.raises(JWTError):
         verify_jwt("not.a.jwt")
 
-def test_fernet_roundtrip():
+
+def test_fernet_roundtrip(monkeypatch):
+    key = Fernet.generate_key().decode()
+    monkeypatch.setattr(auth_module.settings, "fernet_key", key)
     api_key = "test-api-key-abc123"
     enc = encrypt_api_key(api_key)
     assert enc != api_key
