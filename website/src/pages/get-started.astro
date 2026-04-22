@@ -47,25 +47,58 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
 
-    <!-- Step 2 -->
+    <!-- Step 2: Register form -->
     <div class="mb-8">
       <div class="flex items-center gap-3 mb-4">
         <div class="w-8 h-8 rounded-full bg-brand-900/60 border border-brand-500/40 flex items-center justify-center text-brand-400 font-bold text-sm">2</div>
         <h2 class="text-lg font-semibold text-white">Register</h2>
       </div>
-      <p class="text-gray-400 text-sm mb-3 ml-11">Free, no email. Pick a public handle for the leaderboard.</p>
-      <div class="ml-11 space-y-3">
-        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
-          <code id="register-cmd" class="text-green-400 select-all whitespace-pre">curl -s -X POST https://signal-archive-api.fly.dev/contributors \
-  -H "Content-Type: application/json" \
-  -d '&#123;"handle": "your-handle"&#125;' | python3 -m json.tool</code>
-          <button data-copy="register-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+      <p class="text-gray-400 text-sm mb-4 ml-11">Free, no email required. Pick a public handle for the leaderboard.</p>
+
+      <div class="ml-11">
+        <!-- Registration form -->
+        <div id="reg-form" class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+          <div>
+            <label for="handle-input" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Handle <span class="text-brand-500">*</span></label>
+            <input id="handle-input" type="text" placeholder="e.g. alice or research-bot"
+              pattern="[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]"
+              class="w-full bg-gray-950 border border-gray-700 focus:border-brand-500 rounded-lg px-4 py-2.5 text-white text-sm font-mono outline-none transition-colors placeholder-gray-600" />
+            <p class="text-xs text-gray-600 mt-1">Lowercase letters, numbers, hyphens. Shown publicly on the leaderboard.</p>
+          </div>
+          <div>
+            <label for="name-input" class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Display name <span class="text-gray-600">(optional)</span></label>
+            <input id="name-input" type="text" placeholder="e.g. Alice Smith"
+              class="w-full bg-gray-950 border border-gray-700 focus:border-brand-500 rounded-lg px-4 py-2.5 text-white text-sm outline-none transition-colors placeholder-gray-600" />
+          </div>
+          <button id="reg-btn"
+            class="bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">
+            Create account
+          </button>
+          <p id="reg-error" class="hidden text-sm text-red-400"></p>
         </div>
-        <p class="text-gray-400 text-sm">Copy the <code class="bg-gray-800 px-1 py-0.5 rounded text-brand-400 text-xs">api_key</code> from the response, then:</p>
-        <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
-          <code id="export-cmd" class="text-green-400 select-all whitespace-pre">echo 'export SIGNAL_ARCHIVE_API_KEY="your-key-here"' >> ~/.zshrc
-source ~/.zshrc</code>
-          <button data-copy="export-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+
+        <!-- Success state (hidden until registered) -->
+        <div id="reg-success" class="hidden bg-green-900/20 border border-green-700/40 rounded-xl p-6 space-y-4">
+          <div class="flex items-center gap-2 text-green-400 font-semibold text-sm mb-2">
+            <span>✓</span><span id="success-handle"></span> registered
+          </div>
+
+          <div>
+            <p class="text-gray-300 text-sm mb-2">Your API key — <strong class="text-white">copy it now</strong>, it won't be shown again:</p>
+            <div class="bg-gray-950 border border-green-800/40 rounded-xl p-4 font-mono text-sm relative group flex items-center gap-3">
+              <code id="api-key-display" class="text-green-400 flex-1 select-all break-all"></code>
+              <button data-copy="api-key-display" class="copy-btn shrink-0 text-xs text-gray-500 hover:text-gray-200 border border-gray-700 hover:border-gray-500 rounded px-2 py-1 transition-colors">copy</button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-gray-300 text-sm mb-2">Add to your shell profile:</p>
+            <div class="bg-gray-950 border border-gray-800 rounded-xl p-4 font-mono text-sm relative group">
+              <code id="export-cmd" class="text-green-400 select-all whitespace-pre"></code>
+              <button data-copy="export-cmd" class="copy-btn absolute right-3 top-3 text-xs text-gray-600 hover:text-gray-300 transition-colors opacity-0 group-hover:opacity-100">copy</button>
+            </div>
+            <p class="text-xs text-gray-600 mt-1">Or <code class="text-gray-500">~/.bashrc</code> if you use bash. Then run <code class="text-gray-500">source ~/.zshrc</code>.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -111,7 +144,7 @@ source ~/.zshrc</code>
     <div class="bg-yellow-900/10 border border-yellow-700/20 rounded-xl p-5 mb-8 text-sm text-yellow-200/60">
       <span class="text-yellow-400 font-semibold">Privacy: </span>
       The sanitizer runs on your machine before any data is sent. Only public-safe research is accepted.
-      Public figures by name are fine. Private individuals, "our company" references, and relative dates are
+      Public figures by name are fine. Private individuals, company context, and relative dates are
       stripped. You can review what's submitted in the archive.
     </div>
 
@@ -134,14 +167,77 @@ source ~/.zshrc</code>
 </Base>
 
 <script>
+  const API_URL = 'https://signal-archive-api.fly.dev';
+
+  // Copy buttons
   document.querySelectorAll('.copy-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const targetId = btn.getAttribute('data-copy');
       const text = document.getElementById(targetId).textContent;
       navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
         btn.textContent = 'copied';
-        setTimeout(() => { btn.textContent = 'copy'; }, 1500);
+        setTimeout(() => { btn.textContent = original; }, 1500);
       });
     });
+  });
+
+  // Registration form
+  const handleInput = document.getElementById('handle-input');
+  const nameInput = document.getElementById('name-input');
+  const regBtn = document.getElementById('reg-btn');
+  const regError = document.getElementById('reg-error');
+  const regForm = document.getElementById('reg-form');
+  const regSuccess = document.getElementById('reg-success');
+
+  function showError(msg) {
+    regError.textContent = msg;
+    regError.classList.remove('hidden');
+    regBtn.disabled = false;
+    regBtn.textContent = 'Create account';
+  }
+
+  regBtn.addEventListener('click', async () => {
+    const handle = handleInput.value.trim().toLowerCase();
+    const displayName = nameInput.value.trim() || null;
+
+    if (!handle) { showError('Handle is required.'); return; }
+    if (!/^[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]$/.test(handle)) {
+      showError('Handle must be 3–40 characters: lowercase letters, numbers, hyphens. Cannot start or end with a hyphen.');
+      return;
+    }
+
+    regError.classList.add('hidden');
+    regBtn.disabled = true;
+    regBtn.textContent = 'Creating…';
+
+    try {
+      const res = await fetch(`${API_URL}/contributors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ handle, display_name: displayName }),
+      });
+
+      if (res.status === 409) { showError('That handle is already taken. Try a different one.'); return; }
+      if (!res.ok) { showError(`Registration failed (${res.status}). Please try again.`); return; }
+
+      const data = await res.json();
+
+      // Show success state
+      regForm.classList.add('hidden');
+      regSuccess.classList.remove('hidden');
+      document.getElementById('success-handle').textContent = '@' + data.handle;
+      document.getElementById('api-key-display').textContent = data.api_key;
+      document.getElementById('export-cmd').textContent =
+        `echo 'export SIGNAL_ARCHIVE_API_KEY="${data.api_key}"' >> ~/.zshrc\nsource ~/.zshrc`;
+
+    } catch (err) {
+      showError('Network error. Check your connection and try again.');
+    }
+  });
+
+  // Submit on Enter in handle field
+  handleInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') regBtn.click();
   });
 </script>
