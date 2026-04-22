@@ -135,7 +135,10 @@ async def run_post_hook(prompt: str, result_text: str, model_info: str = None) -
     )
 
     client = ArchiveClient()
-    artifact_id = await client.submit(payload)
+    try:
+        artifact_id = await client.submit(payload)
+    except Exception as e:
+        return f"Signal Archive: submission failed — {e}"
     return f"Signal Archive: contributed to archive (ID: {artifact_id})"
 
 

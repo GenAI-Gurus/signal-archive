@@ -21,6 +21,10 @@ def sanitize_prompt(prompt: str) -> SanitizationResult:
         raise RuntimeError(f"{cli} CLI error: {result.stderr.strip()}")
 
     raw = result.stdout.strip()
+    # Strip markdown code fences if the model wrapped the JSON
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else raw
+        raw = raw.rsplit("```", 1)[0].strip()
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as e:
