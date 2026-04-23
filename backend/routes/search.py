@@ -4,6 +4,7 @@ from sqlalchemy import text
 from database import get_db
 from embeddings import get_embedding
 from schemas import SearchResult
+from auth import require_jwt
 
 router = APIRouter(tags=["search"])
 
@@ -12,6 +13,7 @@ async def search_archive(
     q: str = Query(..., min_length=3),
     limit: int = Query(default=5, le=20),
     db: AsyncSession = Depends(get_db),
+    _jwt: dict = Depends(require_jwt),
 ):
     embedding = await get_embedding(q)
     if not all(isinstance(v, (int, float)) for v in embedding):
