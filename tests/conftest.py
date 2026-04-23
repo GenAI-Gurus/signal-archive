@@ -4,11 +4,13 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
+from cryptography.fernet import Fernet
+
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
 os.environ.setdefault("OPENAI_API_KEY", "x")
 os.environ.setdefault("API_KEY_SALT", "x")
 os.environ.setdefault("JWT_SECRET", "test-secret")
-os.environ.setdefault("FERNET_KEY", "x")
+os.environ.setdefault("FERNET_KEY", Fernet.generate_key().decode())
 os.environ.setdefault("RESEND_API_KEY", "")
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession

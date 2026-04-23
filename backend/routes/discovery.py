@@ -24,7 +24,7 @@ async def weekly_research(
         ORDER BY run_count DESC
         LIMIT :limit
     """), {"limit": limit})
-    rows = result.fetchall()
+    rows = result.fetchall()[:limit]
     return [
         {"canonical_question_id": str(r[0]), "title": r[1], "summary": r[2], "run_count": r[3], "reuse_count": r[4]}
         for r in rows
@@ -42,7 +42,7 @@ async def top_reused(
         ORDER BY reuse_count DESC
         LIMIT :limit
     """), {"limit": limit})
-    rows = result.fetchall()
+    rows = result.fetchall()[:limit]
     return [
         {"canonical_question_id": str(r[0]), "title": r[1], "summary": r[2],
          "reuse_count": r[3], "artifact_count": r[4], "last_updated_at": str(r[5])}
@@ -70,7 +70,7 @@ async def emerging_topics(
         ORDER BY growth_score DESC, cq.created_at DESC
         LIMIT :limit
     """), {"limit": limit})
-    rows = result.fetchall()
+    rows = result.fetchall()[:limit]
     return [
         {
             "canonical_question_id": str(r[0]),
@@ -95,7 +95,7 @@ async def leaderboard(
         ORDER BY total_reuse_count DESC, total_contributions DESC
         LIMIT :limit
     """), {"limit": limit})
-    rows = result.fetchall()
+    rows = result.fetchall()[:limit]
     return [
         {"handle": r[0], "display_name": r[1], "total_contributions": r[2],
          "total_reuse_count": r[3], "reputation_score": round(r[4], 2)}

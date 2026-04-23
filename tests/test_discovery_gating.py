@@ -41,7 +41,7 @@ def make_leaderboard_rows(n):
 @pytest.mark.asyncio
 async def test_weekly_anon_returns_3():
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_rows(3)))
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_rows(10)))
     async def override(): yield mock_db
     app.dependency_overrides[get_db] = override
     try:
@@ -72,7 +72,7 @@ async def test_weekly_authed_returns_all():
 @pytest.mark.asyncio
 async def test_top_reused_anon_returns_3():
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_top_reused_rows(3)))
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_top_reused_rows(10)))
     async def override(): yield mock_db
     app.dependency_overrides[get_db] = override
     try:
@@ -103,7 +103,7 @@ async def test_top_reused_authed_returns_all():
 @pytest.mark.asyncio
 async def test_emerging_anon_returns_3():
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_emerging_rows(3)))
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_emerging_rows(10)))
     async def override(): yield mock_db
     app.dependency_overrides[get_db] = override
     try:
@@ -134,7 +134,7 @@ async def test_emerging_authed_returns_all():
 @pytest.mark.asyncio
 async def test_leaderboard_anon_returns_3():
     mock_db = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_leaderboard_rows(3)))
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: make_leaderboard_rows(10)))
     async def override(): yield mock_db
     app.dependency_overrides[get_db] = override
     try:
