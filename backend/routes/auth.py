@@ -26,7 +26,12 @@ router = APIRouter(tags=["auth"])
 async def request_login(body: MagicLinkRequest, db: AsyncSession = Depends(get_db)):
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    cli_session_id = PyUUID(body.cli_session_id) if body.cli_session_id else None
+    cli_session_id = None
+    if body.cli_session_id:
+        try:
+            cli_session_id = PyUUID(body.cli_session_id)
+        except ValueError:
+            raise HTTPException(status_code=422, detail="cli_session_id is not a valid UUID")
     db.add(MagicLinkToken(
         email=body.email.lower().strip(),
         token_hash=token_hash,
@@ -54,7 +59,6 @@ async def verify_magic_link(body: MagicLinkVerify, db: AsyncSession = Depends(ge
         raise HTTPException(status_code=410, detail="Token already used")
     if token_row.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=410, detail="Token expired")
-    token_row.used = True
 
     email = token_row.email
     result2 = await db.execute(select(Contributor).where(Contributor.email == email))
@@ -92,6 +96,7 @@ async def verify_magic_link(body: MagicLinkVerify, db: AsyncSession = Depends(ge
             cli_session.api_key = api_key
             cli_session.claimed = True
 
+    token_row.used = True  # mark used only after all validation passes
     await db.commit()
     if is_new:
         await db.refresh(contributor)
@@ -120,7 +125,7 @@ async def create_cli_session(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/cli-session/{session_id}/poll", response_model=CliSessionPoll)
-async def poll_cli_session(session_id: str, db: AsyncSession = Depends(get_db)):
+async def poll_cli_session(session_id: PyUUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(CliSession).where(CliSession.id == session_id))
     session = result.scalar_one_or_none()
     if not session:

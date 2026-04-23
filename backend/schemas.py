@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class CitationItem(BaseModel):
     url: str
@@ -92,7 +92,7 @@ class FlagCreate(BaseModel):
     flag_type: Literal["useful", "stale", "weakly_sourced", "wrong"]
 
 class MagicLinkRequest(BaseModel):
-    email: str
+    email: EmailStr
     cli_session_id: Optional[str] = None
 
 class MagicLinkVerify(BaseModel):
