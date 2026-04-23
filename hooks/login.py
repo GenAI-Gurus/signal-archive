@@ -5,12 +5,16 @@ Opens a browser to sign in via magic link. Polls until auth completes,
 then prints the export command to configure SIGNAL_ARCHIVE_API_KEY.
 """
 import os
+import re
 import sys
 import time
 import subprocess
 import urllib.request
 import urllib.error
 import json
+
+_SAFE_TOKEN_RE = re.compile(r'^[\w\-]{20,200}$')
+_SAFE_UUID_RE = re.compile(r'^[0-9a-f\-]{36}$')
 
 API_URL = os.environ.get("SIGNAL_ARCHIVE_API_URL", "https://signal-archive-api.fly.dev")
 POLL_INTERVAL_SECS = 2
@@ -57,10 +61,16 @@ def main():
         print(f"Error connecting to Signal Archive API: {e}")
         sys.exit(1)
 
-    login_url = session["login_url"]
-    session_id = session["session_id"]
+    login_url = session.get("login_url")
+    session_id = session.get("session_id")
+    if not login_url or not session_id:
+        print("Error: unexpected response from API. Try again.")
+        sys.exit(1)
+    if not _SAFE_UUID_RE.match(str(session_id)):
+        print("Error: invalid session ID returned by API.")
+        sys.exit(1)
 
-    print(f"→ Opening browser to complete sign-in…")
+    print("→ Opening browser to complete sign-in…")
     open_browser(login_url)
     print("\nWaiting for browser sign-in…  (Ctrl+C to cancel)\n")
 
@@ -77,8 +87,11 @@ def main():
         except Exception:
             continue
 
-        if result.get("ready") and result.get("api_key"):
-            api_key = result["api_key"]
+        api_key = result.get("api_key") if result.get("ready") else None
+        if api_key:
+            if not _SAFE_TOKEN_RE.match(api_key):
+                print("\nError: API key contains unexpected characters. Aborting.")
+                sys.exit(1)
             print("\n✓ Logged in!\n")
             print("Add your API key to your shell profile:\n")
             print(f"  echo 'export SIGNAL_ARCHIVE_API_KEY=\"{api_key}\"' >> ~/.zshrc")

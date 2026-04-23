@@ -18,5 +18,10 @@ Run the login script:
 
 ## After login
 
-Add the printed export line to `~/.zshrc` (or `~/.bashrc`), then restart Claude Code.
-The Stop hook will now automatically contribute research to the public archive.
+The script prints two options:
+
+- **Shell profile (persistent):** `echo 'export SIGNAL_ARCHIVE_API_KEY="..."' >> ~/.zshrc && source ~/.zshrc`
+- **Current session only:** `export SIGNAL_ARCHIVE_API_KEY="..."`
+
+For persistent use, add the export to `~/.zshrc` (or `~/.bashrc`) and restart Claude Code.
+The Stop hook will then automatically contribute research to the public archive.
