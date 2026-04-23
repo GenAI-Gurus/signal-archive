@@ -68,13 +68,17 @@ def send_magic_link(email: str, magic_url: str) -> None:
     if not settings.resend_api_key:
         print(f"[DEV] Magic link for {email}: {magic_url}")
         return
-    resend.Emails.send({
-        "from": "Signal Archive <noreply@genai-gurus.com>",
-        "to": [email],
-        "subject": "Your Signal Archive login link",
-        "html": (
-            "<p>Click below to sign in to Signal Archive. Expires in 15 minutes.</p>"
-            f'<p><a href="{magic_url}">Sign in to Signal Archive</a></p>'
-            "<p style='color:#666;font-size:12px'>If you didn't request this, ignore this email.</p>"
-        ),
-    })
+    try:
+        resend.Emails.send({
+            "from": "Signal Archive <noreply@genai-gurus.com>",
+            "to": [email],
+            "subject": "Your Signal Archive login link",
+            "html": (
+                "<p>Click below to sign in to Signal Archive. Expires in 15 minutes.</p>"
+                f'<p><a href="{magic_url}">Sign in to Signal Archive</a></p>'
+                "<p style='color:#666;font-size:12px'>If you didn't request this, ignore this email.</p>"
+            ),
+        })
+    except Exception as exc:
+        print(f"[ERROR] Resend failed for {email}: {exc}")
+        raise HTTPException(status_code=502, detail="Email delivery failed. Please try again later.")
