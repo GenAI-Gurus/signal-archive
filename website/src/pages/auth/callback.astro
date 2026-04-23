@@ -91,14 +91,15 @@ import Base from '../../layouts/Base.astro';
   import { setToken } from '../../lib/auth.js';
   import { BASE } from '../../lib/api.js';
 
-  const API_URL = 'https://signal-archive-api.fly.dev';
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'https://signal-archive-api.fly.dev';
   const params = new URLSearchParams(window.location.search);
   const magicToken = params.get('token');
 
   // Wire static links using BASE (no template injection into DOM)
   document.getElementById('link-search').href = BASE + '/search';
   document.getElementById('link-discovery').href = BASE + '/discovery';
-  document.getElementById('link-retry').href = BASE + '/login';
+  const cliSession = params.get('cli_session');
+  document.getElementById('link-retry').href = BASE + '/login' + (cliSession ? `?cli_session=${encodeURIComponent(cliSession)}` : '');
 
   function show(stateId) {
     ['state-loading','state-new-user','state-success','state-error'].forEach(id => {
@@ -164,16 +165,17 @@ import Base from '../../layouts/Base.astro';
       // New user — needs to pick a handle
       show('state-new-user');
       document.getElementById('create-btn').addEventListener('click', async () => {
+        const btn = document.getElementById('create-btn');
+        btn.disabled = true;  // prevent double-submission immediately
         const handle = document.getElementById('handle-input').value.trim().toLowerCase();
         const displayName = document.getElementById('name-input').value.trim() || null;
         if (!/^[a-z0-9][a-z0-9\-]{1,38}[a-z0-9]$/.test(handle)) {
           document.getElementById('handle-error').textContent =
             'Handle must be 3-40 chars: lowercase letters, numbers, hyphens.';
           document.getElementById('handle-error').classList.remove('hidden');
+          btn.disabled = false;  // re-enable on validation failure
           return;
         }
-        const btn = document.getElementById('create-btn');
-        btn.disabled = true;
         btn.textContent = 'Creating…';
         await submitVerify(handle, displayName);
       });

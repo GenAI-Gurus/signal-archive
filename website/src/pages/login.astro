@@ -27,7 +27,7 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <script>
-  const API_URL = 'https://signal-archive-api.fly.dev';
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'https://signal-archive-api.fly.dev';
   const cliSession = new URLSearchParams(window.location.search).get('cli_session');
   const emailInput = document.getElementById('email-input');
   const sendBtn = document.getElementById('send-btn');
