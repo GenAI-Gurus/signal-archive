@@ -1,9 +1,15 @@
+import { authHeaders } from './auth.js';
+
 const API_URL = import.meta.env.PUBLIC_API_URL || 'https://signal-archive-api.fly.dev';
 
 export const BASE = import.meta.env.BASE_URL || '/signal-archive';
 
 export async function searchArchive(query, limit = 5) {
-  const res = await fetch(`${API_URL}/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+  const res = await fetch(
+    `${API_URL}/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    { headers: authHeaders() }
+  );
+  if (res.status === 401) return null;  // signal: not authenticated
   if (!res.ok) return [];
   return res.json();
 }

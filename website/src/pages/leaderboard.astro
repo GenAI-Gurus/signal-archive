@@ -9,6 +9,7 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <script>
+  import { isLoggedIn } from '../lib/auth.js';
   import { getLeaderboard, el, link, BASE } from '../lib/api.js';
 
   getLeaderboard().then(items => {
@@ -30,5 +31,19 @@ import Base from '../layouts/Base.astro';
       row.appendChild(stats);
       container.appendChild(row);
     });
+    if (!isLoggedIn() && items.length >= 3) {
+      const banner = document.createElement('div');
+      banner.className = 'mt-4 p-4 bg-gray-900 border border-gray-800 rounded-xl text-center';
+      const msg = document.createElement('p');
+      msg.className = 'text-gray-400 text-sm mb-3';
+      msg.textContent = 'Sign in to see the full leaderboard.';
+      const btn = document.createElement('a');
+      btn.href = BASE + '/login';
+      btn.className = 'bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors';
+      btn.textContent = 'Sign in';
+      banner.appendChild(msg);
+      banner.appendChild(btn);
+      document.getElementById('leaderboard').appendChild(banner);
+    }
   });
 </script>

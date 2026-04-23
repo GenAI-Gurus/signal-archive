@@ -16,60 +16,95 @@ import SearchBox from '../components/SearchBox.astro';
 </Base>
 
 <script>
+  import { isLoggedIn } from '../lib/auth.js';
   import { searchArchive, el, link, BASE } from '../lib/api.js';
 
-  const params = new URLSearchParams(window.location.search);
-  const query = params.get('q');
-  const resultsEl = document.getElementById('results');
-  const emptyEl = document.getElementById('empty');
+  if (!isLoggedIn()) {
+    const wall = document.createElement('div');
+    wall.className = 'mt-6 bg-gray-900 border border-gray-800 rounded-xl p-8 text-center';
+    const msg = document.createElement('p');
+    msg.className = 'text-gray-300 mb-4';
+    msg.textContent = 'Sign in to search the full archive.';
+    const btn = document.createElement('a');
+    btn.href = BASE + '/login';
+    btn.className = 'bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors';
+    btn.textContent = 'Sign in';
+    wall.appendChild(msg);
+    wall.appendChild(btn);
+    document.querySelector('h1').after(wall);
+    document.getElementById('results')?.remove();
+    document.getElementById('empty')?.remove();
+  } else {
+    // existing search logic
+    const params = new URLSearchParams(window.location.search);
+    const query = params.get('q');
+    const resultsEl = document.getElementById('results');
+    const emptyEl = document.getElementById('empty');
 
-  if (query) {
-    const input = document.querySelector('input[name="q"]');
-    if (input) input.value = query;
-    document.title = `"${query}" — Signal Archive`;
+    if (query) {
+      const input = document.querySelector('input[name="q"]');
+      if (input) input.value = query;
+      document.title = `"${query}" — Signal Archive`;
 
-    resultsEl.replaceChildren();
-    for (let i = 0; i < 3; i++) {
-      const card = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 animate-pulse');
-      card.appendChild(el('div', 'h-5 bg-gray-800 rounded w-3/4 mb-3'));
-      card.appendChild(el('div', 'h-4 bg-gray-800 rounded w-full mb-2'));
-      card.appendChild(el('div', 'h-4 bg-gray-800 rounded w-2/3'));
-      resultsEl.appendChild(card);
-    }
-
-    searchArchive(query, 10).then(results => {
       resultsEl.replaceChildren();
-      if (!results.length) {
-        emptyEl.classList.remove('hidden');
-        return;
-      }
-      results.forEach(r => {
-        const pct = Math.round(r.similarity * 100);
-        const card = el('a', 'block bg-gray-900 border border-gray-800 hover:border-brand-500/50 rounded-xl p-6 transition-all group');
-        card.href = `${BASE}/canonical/?id=${r.canonical_question_id}`;
-
-        const header = el('div', 'flex items-start justify-between gap-4');
-        const title = el('h3', 'font-semibold text-white group-hover:text-brand-400 transition-colors', r.title);
-        const badge = el('span',
-          `shrink-0 text-xs font-mono px-2 py-1 rounded-full border ${pct >= 85 ? 'bg-green-900/30 border-green-700/40 text-green-400' : 'bg-gray-800 border-gray-700 text-gray-400'}`,
-          `${pct}%`
-        );
-        header.appendChild(title);
-        header.appendChild(badge);
-        card.appendChild(header);
-
-        if (r.synthesized_summary) {
-          card.appendChild(el('p', 'mt-2 text-sm text-gray-400', r.synthesized_summary.substring(0, 200)));
-        }
-
-        const meta = el('div', 'mt-3 flex gap-4 text-xs text-gray-600');
-        meta.appendChild(el('span', null, `📄 ${r.artifact_count} artifact${r.artifact_count !== 1 ? 's' : ''}`));
-        if (r.reuse_count > 0) {
-          meta.appendChild(el('span', null, `♻️ ${r.reuse_count} reuses`));
-        }
-        card.appendChild(meta);
+      for (let i = 0; i < 3; i++) {
+        const card = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 animate-pulse');
+        card.appendChild(el('div', 'h-5 bg-gray-800 rounded w-3/4 mb-3'));
+        card.appendChild(el('div', 'h-4 bg-gray-800 rounded w-full mb-2'));
+        card.appendChild(el('div', 'h-4 bg-gray-800 rounded w-2/3'));
         resultsEl.appendChild(card);
+      }
+
+      searchArchive(query, 10).then(results => {
+        resultsEl.replaceChildren();
+        if (results === null) {
+          // JWT expired mid-session — show wall
+          const wall = document.createElement('div');
+          wall.className = 'bg-gray-900 border border-gray-800 rounded-xl p-8 text-center';
+          const msg = document.createElement('p');
+          msg.className = 'text-gray-300 mb-4';
+          msg.textContent = 'Your session expired. Please sign in again.';
+          const btn = document.createElement('a');
+          btn.href = BASE + '/login';
+          btn.className = 'bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors';
+          btn.textContent = 'Sign in';
+          wall.appendChild(msg);
+          wall.appendChild(btn);
+          resultsEl.appendChild(wall);
+          return;
+        }
+        if (!results.length) {
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+        results.forEach(r => {
+          const pct = Math.round(r.similarity * 100);
+          const card = el('a', 'block bg-gray-900 border border-gray-800 hover:border-brand-500/50 rounded-xl p-6 transition-all group');
+          card.href = `${BASE}/canonical/?id=${r.canonical_question_id}`;
+
+          const header = el('div', 'flex items-start justify-between gap-4');
+          const title = el('h3', 'font-semibold text-white group-hover:text-brand-400 transition-colors', r.title);
+          const badge = el('span',
+            `shrink-0 text-xs font-mono px-2 py-1 rounded-full border ${pct >= 85 ? 'bg-green-900/30 border-green-700/40 text-green-400' : 'bg-gray-800 border-gray-700 text-gray-400'}`,
+            `${pct}%`
+          );
+          header.appendChild(title);
+          header.appendChild(badge);
+          card.appendChild(header);
+
+          if (r.synthesized_summary) {
+            card.appendChild(el('p', 'mt-2 text-sm text-gray-400', r.synthesized_summary.substring(0, 200)));
+          }
+
+          const meta = el('div', 'mt-3 flex gap-4 text-xs text-gray-600');
+          meta.appendChild(el('span', null, `📄 ${r.artifact_count} artifact${r.artifact_count !== 1 ? 's' : ''}`));
+          if (r.reuse_count > 0) {
+            meta.appendChild(el('span', null, `♻️ ${r.reuse_count} reuses`));
+          }
+          card.appendChild(meta);
+          resultsEl.appendChild(card);
+        });
       });
-    });
+    }
   }
 </script>

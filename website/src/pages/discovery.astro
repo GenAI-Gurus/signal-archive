@@ -23,7 +23,25 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <script>
+  import { isLoggedIn } from '../lib/auth.js';
   import { getWeeklyResearch, getTopReused, getEmerging, el, link, BASE } from '../lib/api.js';
+
+  function appendGateBanner(containerId) {
+    if (isLoggedIn()) return;
+    const container = document.getElementById(containerId);
+    const banner = document.createElement('div');
+    banner.className = 'mt-2 p-3 bg-gray-900 border border-gray-800 rounded-lg text-center';
+    const note = document.createElement('span');
+    note.className = 'text-gray-500 text-xs';
+    note.textContent = 'Sign in to see all results — ';
+    const signInLink = document.createElement('a');
+    signInLink.href = BASE + '/login';
+    signInLink.className = 'text-brand-400 hover:text-brand-300 text-xs font-semibold';
+    signInLink.textContent = 'Sign in';
+    banner.appendChild(note);
+    banner.appendChild(signInLink);
+    container.appendChild(banner);
+  }
 
   function renderRows(containerId, items, hrefFn, titleFn, badgeFn) {
     const container = document.getElementById(containerId);
@@ -40,12 +58,14 @@ import Base from '../layouts/Base.astro';
     });
   }
 
-  getWeeklyResearch().then(d =>
-    renderRows('weekly', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `${i.run_count} runs`)
-  );
-  getTopReused().then(d =>
-    renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`)
-  );
+  getWeeklyResearch().then(d => {
+    renderRows('weekly', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `${i.run_count} runs`);
+    appendGateBanner('weekly');
+  });
+  getTopReused().then(d => {
+    renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`);
+    appendGateBanner('reused');
+  });
 
   getEmerging().then(items => {
     const container = document.getElementById('emerging');
@@ -67,5 +87,6 @@ import Base from '../layouts/Base.astro';
       grid.appendChild(card);
     });
     container.appendChild(grid);
+    appendGateBanner('emerging');
   });
 </script>

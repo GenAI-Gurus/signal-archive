@@ -18,13 +18,18 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
 <body class="min-h-screen flex flex-col">
   <nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
     <a href={base + '/'} class="text-lg font-bold text-brand-400 font-mono">signal-archive</a>
-    <div class="flex gap-6 text-sm text-gray-400">
+    <div class="flex gap-6 text-sm text-gray-400 items-center">
       <a href={base + '/search'} class="hover:text-white">Search</a>
       <a href={base + '/discovery'} class="hover:text-white">Discovery</a>
       <a href={base + '/leaderboard'} class="hover:text-white">Leaderboard</a>
       <a href={base + '/about'} class="hover:text-white">About</a>
       <a href={base + '/get-started'} class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1 rounded-lg transition-colors text-xs font-semibold">Get Started</a>
       <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank" class="hover:text-white">GitHub</a>
+      <span id="nav-auth" class="flex items-center gap-2">
+        <a id="nav-login" href={base + '/login'} class="hidden text-brand-400 hover:text-brand-300 text-xs font-semibold">Sign in</a>
+        <span id="nav-user" class="hidden text-xs text-gray-500 font-mono"></span>
+        <button id="nav-logout" class="hidden text-xs text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
+      </span>
     </div>
   </nav>
   <main class="flex-1 container mx-auto px-6 py-10 max-w-5xl">
@@ -34,5 +39,24 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
     Signal Archive · Powered by <a href="https://genaigurus.com" class="hover:text-gray-400">GenAI Gurus</a>
     · <a href="https://github.com/GenAI-Gurus/signal-archive" class="hover:text-gray-400">Open source</a>
   </footer>
+
+<script>
+  import { isLoggedIn, getHandle, clearToken } from '../lib/auth.js';
+  const loginEl = document.getElementById('nav-login');
+  const userEl = document.getElementById('nav-user');
+  const logoutEl = document.getElementById('nav-logout');
+  if (isLoggedIn()) {
+    loginEl.classList.add('hidden');
+    userEl.classList.remove('hidden');
+    userEl.textContent = '@' + getHandle();
+    logoutEl.classList.remove('hidden');
+  } else {
+    loginEl.classList.remove('hidden');
+  }
+  logoutEl.addEventListener('click', () => {
+    clearToken();
+    window.location.href = '/signal-archive/';
+  });
+</script>
 </body>
 </html>
