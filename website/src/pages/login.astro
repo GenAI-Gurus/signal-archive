@@ -1,0 +1,69 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Sign in" description="Sign in to Signal Archive">
+  <div class="max-w-md mx-auto mt-10">
+    <h1 class="text-2xl font-bold text-white mb-2">Sign in to Signal Archive</h1>
+    <p class="text-gray-400 mb-8">Enter your email — we'll send a magic link. No password needed.</p>
+
+    <div id="form-state">
+      <div class="space-y-4">
+        <input id="email-input" type="email" placeholder="you@example.com" autocomplete="email"
+          class="w-full bg-gray-900 border border-gray-700 focus:border-brand-500 rounded-lg px-4 py-3 text-white text-sm outline-none transition-colors placeholder-gray-600" />
+        <button id="send-btn"
+          class="w-full bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-semibold py-3 rounded-lg text-sm transition-colors">
+          Send magic link
+        </button>
+        <p id="error-msg" class="hidden text-sm text-red-400"></p>
+      </div>
+    </div>
+
+    <div id="check-email" class="hidden text-center py-8">
+      <div class="text-4xl mb-4">📬</div>
+      <h2 class="text-lg font-semibold text-white mb-2">Check your email</h2>
+      <p class="text-gray-400 text-sm">We sent a link to <strong id="sent-to" class="text-white"></strong>.<br>Click it to sign in. Expires in 15 minutes.</p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const API_URL = 'https://signal-archive-api.fly.dev';
+  const cliSession = new URLSearchParams(window.location.search).get('cli_session');
+  const emailInput = document.getElementById('email-input');
+  const sendBtn = document.getElementById('send-btn');
+  const errorMsg = document.getElementById('error-msg');
+
+  sendBtn.addEventListener('click', async () => {
+    const email = emailInput.value.trim();
+    if (!email || !email.includes('@')) {
+      errorMsg.textContent = 'Enter a valid email address.';
+      errorMsg.classList.remove('hidden');
+      return;
+    }
+    errorMsg.classList.add('hidden');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Sending…';
+
+    const body = { email };
+    if (cliSession) body.cli_session_id = cliSession;
+
+    try {
+      const r = await fetch(`${API_URL}/auth/request-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error();
+      document.getElementById('sent-to').textContent = email;
+      document.getElementById('form-state').classList.add('hidden');
+      document.getElementById('check-email').classList.remove('hidden');
+    } catch {
+      errorMsg.textContent = 'Something went wrong. Please try again.';
+      errorMsg.classList.remove('hidden');
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send magic link';
+    }
+  });
+
+  emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendBtn.click(); });
+</script>
