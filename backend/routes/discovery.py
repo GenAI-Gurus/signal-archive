@@ -24,7 +24,7 @@ async def weekly_research(
         ORDER BY run_count DESC
         LIMIT :limit
     """), {"limit": limit})
-    rows = result.fetchall()[:limit]
+    rows = result.fetchall()
     return [
         {"canonical_question_id": str(r[0]), "title": r[1], "summary": r[2], "run_count": r[3], "reuse_count": r[4]}
         for r in rows
