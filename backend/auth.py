@@ -70,7 +70,7 @@ def send_magic_link(email: str, magic_url: str) -> None:
         return
     try:
         resend.Emails.send({
-            "from": "Signal Archive <noreply@genai-gurus.com>",
+            "from": "Signal Archive <noreply@auth.genai-gurus.com>",
             "to": [email],
             "subject": "Your Signal Archive login link",
             "html": (
