@@ -33,19 +33,19 @@ export async function getRelated(id) {
 }
 
 export async function getWeeklyResearch() {
-  const res = await fetch(`${API_URL}/discovery/weekly`);
+  const res = await fetch(`${API_URL}/discovery/weekly`, { headers: authHeaders() });
   if (!res.ok) return [];
   return res.json();
 }
 
 export async function getTopReused() {
-  const res = await fetch(`${API_URL}/discovery/top-reused`);
+  const res = await fetch(`${API_URL}/discovery/top-reused`, { headers: authHeaders() });
   if (!res.ok) return [];
   return res.json();
 }
 
 export async function getLeaderboard() {
-  const res = await fetch(`${API_URL}/discovery/leaderboard`);
+  const res = await fetch(`${API_URL}/discovery/leaderboard`, { headers: authHeaders() });
   if (!res.ok) return [];
   return res.json();
 }
@@ -57,7 +57,7 @@ export async function getContributor(handle) {
 }
 
 export async function getEmerging() {
-  const res = await fetch(`${API_URL}/discovery/emerging`);
+  const res = await fetch(`${API_URL}/discovery/emerging`, { headers: authHeaders() });
   if (!res.ok) return [];
   return res.json();
 }

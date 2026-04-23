@@ -26,8 +26,8 @@ import Base from '../layouts/Base.astro';
   import { isLoggedIn } from '../lib/auth.js';
   import { getWeeklyResearch, getTopReused, getEmerging, el, link, BASE } from '../lib/api.js';
 
-  function appendGateBanner(containerId) {
-    if (isLoggedIn()) return;
+  function appendGateBanner(containerId, itemCount) {
+    if (isLoggedIn() || itemCount === 0) return;
     const container = document.getElementById(containerId);
     const banner = document.createElement('div');
     banner.className = 'mt-2 p-3 bg-gray-900 border border-gray-800 rounded-lg text-center';
@@ -60,11 +60,11 @@ import Base from '../layouts/Base.astro';
 
   getWeeklyResearch().then(d => {
     renderRows('weekly', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `${i.run_count} runs`);
-    appendGateBanner('weekly');
+    appendGateBanner('weekly', d.length);
   });
   getTopReused().then(d => {
     renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`);
-    appendGateBanner('reused');
+    appendGateBanner('reused', d.length);
   });
 
   getEmerging().then(items => {
@@ -87,6 +87,6 @@ import Base from '../layouts/Base.astro';
       grid.appendChild(card);
     });
     container.appendChild(grid);
-    appendGateBanner('emerging');
+    appendGateBanner('emerging', items.length);
   });
 </script>

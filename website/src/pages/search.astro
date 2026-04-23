@@ -104,6 +104,12 @@ import SearchBox from '../components/SearchBox.astro';
           card.appendChild(meta);
           resultsEl.appendChild(card);
         });
+      }).catch(() => {
+        resultsEl.replaceChildren();
+        const errMsg = document.createElement('p');
+        errMsg.className = 'text-center text-gray-500 py-12';
+        errMsg.textContent = 'Search unavailable. Please try again later.';
+        resultsEl.appendChild(errMsg);
       });
     }
   }

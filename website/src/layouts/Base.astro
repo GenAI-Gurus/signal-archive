@@ -42,6 +42,7 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
 
 <script>
   import { isLoggedIn, getHandle, clearToken } from '../lib/auth.js';
+  import { BASE } from '../lib/api.js';
   const loginEl = document.getElementById('nav-login');
   const userEl = document.getElementById('nav-user');
   const logoutEl = document.getElementById('nav-logout');
@@ -55,7 +56,7 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
   }
   logoutEl.addEventListener('click', () => {
     clearToken();
-    window.location.href = '/signal-archive/';
+    window.location.href = BASE + '/';
   });
 </script>
 </body>
