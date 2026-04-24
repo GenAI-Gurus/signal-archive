@@ -135,7 +135,7 @@ class MeResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class MePatch(BaseModel):
-    display_name: Optional[str] = None
+    display_name: Optional[str] = Field(default=None, max_length=100)
 
 class ApiKeyResponse(BaseModel):
     api_key: str

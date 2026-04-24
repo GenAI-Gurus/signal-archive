@@ -277,7 +277,7 @@ async def test_patch_me_updates_display_name():
     assert r.status_code == 200
     body = r.json()
     assert body["handle"] == "patcher"
-    # display_name was set on the mock object
+    assert body["display_name"] == "New Name"
     assert fake_contributor.display_name == "New Name"
 
 
@@ -323,3 +323,67 @@ async def test_get_api_key_returns_key():
 
     assert r.status_code == 200
     assert r.json()["api_key"] == raw_key
+
+    # Verify identity isolation — query used the token's sub
+    from uuid import UUID as PyUUID
+    stmt = mock_db.execute.call_args[0][0]
+    assert stmt.whereclause.right.value == PyUUID(uid)
+
+
+@pytest.mark.asyncio
+async def test_get_api_key_returns_401_without_token():
+    from main import app
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/auth/api-key")
+    finally:
+        app.dependency_overrides.clear()
+    assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_patch_me_returns_404_when_contributor_not_found():
+    import uuid
+    from unittest.mock import AsyncMock, MagicMock
+    from auth import create_jwt
+    from database import get_db
+    from main import app
+
+    token = create_jwt(str(uuid.uuid4()), "ghost", "ghost@example.com")
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=lambda: None))
+
+    async def override(): yield mock_db
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.patch(
+                "/auth/me",
+                json={"display_name": "x"},
+                headers={"Authorization": f"Bearer {token}"},
+            )
+    finally:
+        app.dependency_overrides.clear()
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_api_key_returns_404_when_contributor_not_found():
+    import uuid
+    from unittest.mock import AsyncMock, MagicMock
+    from auth import create_jwt
+    from database import get_db
+    from main import app
+
+    token = create_jwt(str(uuid.uuid4()), "ghost", "ghost@example.com")
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(scalar_one_or_none=lambda: None))
+
+    async def override(): yield mock_db
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/auth/api-key", headers={"Authorization": f"Bearer {token}"})
+    finally:
+        app.dependency_overrides.clear()
+    assert r.status_code == 404

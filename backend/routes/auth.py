@@ -155,23 +155,26 @@ async def exchange_api_key(body: TokenRequest, db: AsyncSession = Depends(get_db
     )
 
 
+async def _get_caller(jwt_payload: dict, db: AsyncSession) -> Contributor:
+    """Resolve jwt_payload['sub'] to a Contributor row or raise 401/404."""
+    try:
+        sub_uuid = PyUUID(jwt_payload["sub"])
+    except (ValueError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+    result = await db.execute(select(Contributor).where(Contributor.id == sub_uuid))
+    contributor = result.scalar_one_or_none()
+    if not contributor:
+        raise HTTPException(status_code=404, detail="Contributor not found")
+    return contributor
+
+
 @router.get("/me", response_model=MeResponse)
 async def get_me(
     db: AsyncSession = Depends(get_db),
     jwt_payload: dict = Depends(require_jwt),
 ):
     """Return the authenticated caller's contributor profile."""
-    try:
-        sub_uuid = PyUUID(jwt_payload["sub"])
-    except (ValueError, KeyError):
-        raise HTTPException(status_code=401, detail="Invalid token subject")
-    result = await db.execute(
-        select(Contributor).where(Contributor.id == sub_uuid)
-    )
-    contributor = result.scalar_one_or_none()
-    if not contributor:
-        raise HTTPException(status_code=404, detail="Contributor not found")
-    return contributor
+    return await _get_caller(jwt_payload, db)
 
 
 @router.patch("/me", response_model=MeResponse)
@@ -181,16 +184,7 @@ async def patch_me(
     jwt_payload: dict = Depends(require_jwt),
 ):
     """Update the authenticated caller's profile (display_name)."""
-    try:
-        sub_uuid = PyUUID(jwt_payload["sub"])
-    except (ValueError, KeyError):
-        raise HTTPException(status_code=401, detail="Invalid token subject")
-    result = await db.execute(
-        select(Contributor).where(Contributor.id == sub_uuid)
-    )
-    contributor = result.scalar_one_or_none()
-    if not contributor:
-        raise HTTPException(status_code=404, detail="Contributor not found")
+    contributor = await _get_caller(jwt_payload, db)
     if body.display_name is not None:
         contributor.display_name = body.display_name
     await db.commit()
@@ -204,14 +198,7 @@ async def get_api_key(
     jwt_payload: dict = Depends(require_jwt),
 ):
     """Return the authenticated caller's api_key (decrypted)."""
-    try:
-        sub_uuid = PyUUID(jwt_payload["sub"])
-    except (ValueError, KeyError):
-        raise HTTPException(status_code=401, detail="Invalid token subject")
-    result = await db.execute(
-        select(Contributor).where(Contributor.id == sub_uuid)
-    )
-    contributor = result.scalar_one_or_none()
-    if not contributor:
-        raise HTTPException(status_code=404, detail="Contributor not found")
+    contributor = await _get_caller(jwt_payload, db)
+    if not contributor.api_key_enc:
+        raise HTTPException(status_code=500, detail="API key not available — re-register via magic link")
     return ApiKeyResponse(api_key=decrypt_api_key(contributor.api_key_enc))
