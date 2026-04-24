@@ -120,3 +120,59 @@ async def test_cli_session_poll_not_ready():
         app.dependency_overrides.clear()
     assert r.status_code == 200
     assert r.json()["ready"] is False
+
+
+@pytest.mark.asyncio
+async def test_token_returns_jwt_for_valid_api_key():
+    from auth import create_jwt, hash_api_key
+    import uuid
+    from unittest.mock import AsyncMock, MagicMock
+    from database import get_db
+    from main import app
+
+    raw_key = "test-api-key-abc123"
+
+    fake_contributor = MagicMock()
+    fake_contributor.id = uuid.uuid4()
+    fake_contributor.handle = "tester"
+    fake_contributor.email = "tester@example.com"
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(
+        scalar_one_or_none=lambda: fake_contributor
+    ))
+
+    async def override(): yield mock_db
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post("/auth/token", json={"api_key": raw_key})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 200
+    body = r.json()
+    assert "jwt" in body
+    assert body["handle"] == "tester"
+    assert body["email"] == "tester@example.com"
+
+
+@pytest.mark.asyncio
+async def test_token_returns_401_for_invalid_key():
+    from database import get_db
+    from main import app
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(
+        scalar_one_or_none=lambda: None
+    ))
+
+    async def override(): yield mock_db
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.post("/auth/token", json={"api_key": "wrong-key"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 401

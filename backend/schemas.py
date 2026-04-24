@@ -114,3 +114,11 @@ class CliSessionResponse(BaseModel):
 class CliSessionPoll(BaseModel):
     ready: bool
     api_key: Optional[str] = None
+
+class TokenRequest(BaseModel):
+    api_key: str
+
+class TokenResponse(BaseModel):
+    jwt: str
+    handle: str
+    email: str

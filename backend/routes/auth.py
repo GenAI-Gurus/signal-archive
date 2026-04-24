@@ -12,6 +12,7 @@ from models import Contributor, MagicLinkToken, CliSession
 from schemas import (
     MagicLinkRequest, MagicLinkVerify, AuthResponse,
     CliSessionResponse, CliSessionPoll,
+    TokenRequest, TokenResponse,
 )
 from auth import hash_api_key, encrypt_api_key, decrypt_api_key, create_jwt, send_magic_link
 
@@ -135,3 +136,18 @@ async def poll_cli_session(session_id: PyUUID, db: AsyncSession = Depends(get_db
     if session.claimed and session.api_key:
         return CliSessionPoll(ready=True, api_key=session.api_key)
     return CliSessionPoll(ready=False)
+
+
+@router.post("/token", response_model=TokenResponse)
+async def exchange_api_key(body: TokenRequest, db: AsyncSession = Depends(get_db)):
+    """Exchange an api_key for a JWT. Use the returned JWT as Bearer token for all subsequent requests."""
+    key_hash = hash_api_key(body.api_key)
+    result = await db.execute(select(Contributor).where(Contributor.api_key_hash == key_hash))
+    contributor = result.scalar_one_or_none()
+    if not contributor:
+        raise HTTPException(status_code=401, detail="Invalid api_key")
+    return TokenResponse(
+        jwt=create_jwt(str(contributor.id), contributor.handle, contributor.email or ""),
+        handle=contributor.handle,
+        email=contributor.email or "",
+    )
