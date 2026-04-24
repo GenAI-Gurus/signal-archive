@@ -1,4 +1,6 @@
-import os
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -6,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 @pytest.mark.asyncio
 async def test_backfill_updates_all_canonicals():
     """Backfill fetches canonical rows, generates summary for each, and writes back."""
-    from summarizer.backfill import run
+    from batch.backfill import run
 
     canonical_rows = [
         ("uuid-1", "How does TLS work?"),
@@ -38,9 +40,9 @@ async def test_backfill_updates_all_canonicals():
     mock_engine = AsyncMock()
     mock_engine.dispose = AsyncMock()
 
-    with patch("summarizer.backfill.create_async_engine", return_value=mock_engine), \
-         patch("summarizer.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
-         patch("summarizer.backfill.synthesize_summary", new=AsyncMock(return_value="A synthesized summary.")), \
+    with patch("batch.backfill.create_async_engine", return_value=mock_engine), \
+         patch("batch.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
+         patch("batch.backfill.synthesize_summary", new=AsyncMock(return_value="A synthesized summary.")), \
          patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://fake/db"}):
         count = await run()
 
@@ -52,7 +54,7 @@ async def test_backfill_updates_all_canonicals():
 @pytest.mark.asyncio
 async def test_backfill_skips_canonicals_with_no_artifacts():
     """Canonicals with no artifacts (empty short_answers) get an empty summary and are still updated."""
-    from summarizer.backfill import run
+    from batch.backfill import run
 
     canonical_rows = [("uuid-3", "What is chaos engineering?")]
 
@@ -72,9 +74,9 @@ async def test_backfill_skips_canonicals_with_no_artifacts():
     mock_engine = AsyncMock()
     mock_engine.dispose = AsyncMock()
 
-    with patch("summarizer.backfill.create_async_engine", return_value=mock_engine), \
-         patch("summarizer.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
-         patch("summarizer.backfill.synthesize_summary", new=AsyncMock(return_value="")), \
+    with patch("batch.backfill.create_async_engine", return_value=mock_engine), \
+         patch("batch.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
+         patch("batch.backfill.synthesize_summary", new=AsyncMock(return_value="")), \
          patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://fake/db"}):
         count = await run()
 
@@ -85,7 +87,7 @@ async def test_backfill_skips_canonicals_with_no_artifacts():
 @pytest.mark.asyncio
 async def test_backfill_handles_empty_table():
     """Returns 0 when canonical_questions table is empty."""
-    from summarizer.backfill import run
+    from batch.backfill import run
 
     select_canonicals = MagicMock()
     select_canonicals.fetchall.return_value = []
@@ -98,8 +100,8 @@ async def test_backfill_handles_empty_table():
     mock_engine = AsyncMock()
     mock_engine.dispose = AsyncMock()
 
-    with patch("summarizer.backfill.create_async_engine", return_value=mock_engine), \
-         patch("summarizer.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
+    with patch("batch.backfill.create_async_engine", return_value=mock_engine), \
+         patch("batch.backfill.sessionmaker", return_value=MagicMock(return_value=mock_session)), \
          patch.dict(os.environ, {"DATABASE_URL": "postgresql+asyncpg://fake/db"}):
         count = await run()
 
