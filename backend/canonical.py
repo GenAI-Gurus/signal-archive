@@ -3,8 +3,10 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from models import CanonicalQuestion
+from summarizer import synthesize_summary
 
 SIMILARITY_THRESHOLD = 0.88
+
 
 async def find_or_create_canonical(
     db: AsyncSession,
@@ -27,10 +29,41 @@ async def find_or_create_canonical(
 
     if rows:
         canonical_id = rows[0][0]
-        await db.execute(
-            text("UPDATE canonical_questions SET last_updated_at = NOW(), artifact_count = artifact_count + 1 WHERE id = :id"),
-            {"id": canonical_id},
+        canonical_title = rows[0][1]
+
+        art_result = await db.execute(
+            text(
+                "SELECT short_answer FROM research_artifacts"
+                " WHERE canonical_question_id = :cid"
+                " ORDER BY created_at DESC LIMIT 10"
+            ),
+            {"cid": str(canonical_id)},
         )
+        existing_answers = [r[0] for r in art_result.fetchall()]
+        all_answers = [summary] + existing_answers
+
+        try:
+            new_summary = await synthesize_summary(canonical_title, all_answers)
+            await db.execute(
+                text(
+                    "UPDATE canonical_questions"
+                    " SET last_updated_at = NOW(),"
+                    "     artifact_count = artifact_count + 1,"
+                    "     synthesized_summary = :summary"
+                    " WHERE id = :id"
+                ),
+                {"summary": new_summary, "id": canonical_id},
+            )
+        except Exception:
+            await db.execute(
+                text(
+                    "UPDATE canonical_questions"
+                    " SET last_updated_at = NOW(),"
+                    "     artifact_count = artifact_count + 1"
+                    " WHERE id = :id"
+                ),
+                {"id": canonical_id},
+            )
         return canonical_id, False
 
     canonical = CanonicalQuestion(
