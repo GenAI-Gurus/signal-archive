@@ -161,8 +161,12 @@ async def get_me(
     jwt_payload: dict = Depends(require_jwt),
 ):
     """Return the authenticated caller's contributor profile."""
+    try:
+        sub_uuid = PyUUID(jwt_payload["sub"])
+    except (ValueError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
     result = await db.execute(
-        select(Contributor).where(Contributor.id == jwt_payload["sub"])
+        select(Contributor).where(Contributor.id == sub_uuid)
     )
     contributor = result.scalar_one_or_none()
     if not contributor:

@@ -218,10 +218,18 @@ async def test_me_returns_own_profile():
     assert body["email"] == "me@example.com"
     assert body["total_contributions"] == 5
 
+    # Verify the query used the token's sub (identity isolation)
+    from uuid import UUID as PyUUID
+    stmt = mock_db.execute.call_args[0][0]
+    assert stmt.whereclause.right.value == PyUUID(uid)
+
 
 @pytest.mark.asyncio
 async def test_me_returns_401_without_token():
     from main import app
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.get("/auth/me")
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/auth/me")
+    finally:
+        app.dependency_overrides.clear()
     assert r.status_code == 401
