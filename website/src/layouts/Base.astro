@@ -28,7 +28,7 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
       <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank" class="hover:text-white">GitHub</a>
       <span id="nav-auth" class="flex items-center gap-2">
         <a id="nav-login" href={base + '/login'} class="hidden text-brand-400 hover:text-brand-300 text-xs font-semibold">Sign in</a>
-        <span id="nav-user" class="hidden text-xs text-gray-500 font-mono"></span>
+        <a id="nav-account" href={base + '/account'} class="hidden text-xs text-gray-400 hover:text-white font-mono"></a>
         <button id="nav-logout" class="hidden text-xs text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
       </span>
     </div>
@@ -45,12 +45,12 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
   import { isLoggedIn, getHandle, clearToken } from '../lib/auth.js';
   import { BASE } from '../lib/api.js';
   const loginEl = document.getElementById('nav-login');
-  const userEl = document.getElementById('nav-user');
+  const accountEl = document.getElementById('nav-account');
   const logoutEl = document.getElementById('nav-logout');
   if (isLoggedIn()) {
     loginEl.classList.add('hidden');
-    userEl.classList.remove('hidden');
-    userEl.textContent = '@' + getHandle();
+    accountEl.classList.remove('hidden');
+    accountEl.textContent = '@' + getHandle();
     logoutEl.classList.remove('hidden');
   } else {
     loginEl.classList.remove('hidden');

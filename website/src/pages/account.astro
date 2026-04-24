@@ -1,0 +1,190 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="My Account" description="Manage your Signal Archive account">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-3xl font-bold text-white mb-8">My Account</h1>
+
+    <div id="loading" class="text-gray-500 text-sm">Loading…</div>
+    <div id="content" class="hidden space-y-8">
+
+      <!-- Stats -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Stats</h2>
+        <div class="grid grid-cols-3 gap-4">
+          <div class="text-center">
+            <div id="stat-contributions" class="text-2xl font-bold text-white">—</div>
+            <div class="text-xs text-gray-500 mt-1">Contributions</div>
+          </div>
+          <div class="text-center">
+            <div id="stat-reuse" class="text-2xl font-bold text-white">—</div>
+            <div class="text-xs text-gray-500 mt-1">Reuses</div>
+          </div>
+          <div class="text-center">
+            <div id="stat-reputation" class="text-2xl font-bold text-brand-400">—</div>
+            <div class="text-xs text-gray-500 mt-1">Reputation</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Profile</h2>
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs text-gray-500 mb-1">Handle</div>
+            <div id="profile-handle" class="text-white font-mono text-sm"></div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 mb-1">Email</div>
+            <div id="profile-email" class="text-white text-sm"></div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 mb-1">Member since</div>
+            <div id="profile-since" class="text-white text-sm"></div>
+          </div>
+          <div>
+            <label for="display-name-input" class="block text-xs text-gray-500 mb-1">Display name</label>
+            <div class="flex gap-2">
+              <input
+                id="display-name-input"
+                type="text"
+                maxlength="100"
+                placeholder="Your display name"
+                class="flex-1 bg-gray-950 border border-gray-700 focus:border-brand-500 rounded-lg px-3 py-2 text-white text-sm outline-none transition-colors placeholder-gray-600"
+              />
+              <button
+                id="display-name-save"
+                class="bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+              >Save</button>
+            </div>
+            <p id="display-name-msg" class="hidden text-xs mt-1"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- API Key -->
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-1">API Key</h2>
+        <p class="text-xs text-gray-500 mb-4">Used by the CLI and direct API access. Keep it secret.</p>
+        <div class="flex gap-2 items-center">
+          <input
+            id="api-key-input"
+            type="password"
+            readonly
+            class="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 text-gray-300 font-mono text-sm outline-none"
+          />
+          <button id="api-key-toggle" class="text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-2 rounded-lg transition-colors">Show</button>
+          <button id="api-key-copy" class="text-xs text-gray-500 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-2 rounded-lg transition-colors">Copy</button>
+        </div>
+        <p id="api-key-error" class="hidden text-xs text-red-400 mt-2"></p>
+      </div>
+
+    </div>
+    <div id="unauthed" class="hidden text-center py-16">
+      <p class="text-gray-400 mb-4">You need to be signed in to view your account.</p>
+      <a id="signin-link" href="#" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors">Sign in</a>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { isLoggedIn, authHeaders } from '../lib/auth.js';
+  import { BASE } from '../lib/api.js';
+
+  const API_URL = import.meta.env.PUBLIC_API_URL || 'https://signal-archive-api.fly.dev';
+
+  document.getElementById('signin-link').href = BASE + '/login';
+
+  if (!isLoggedIn()) {
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('unauthed').classList.remove('hidden');
+  } else {
+    loadAccount();
+  }
+
+  async function loadAccount() {
+    const headers = authHeaders();
+    const [profileRes, keyRes] = await Promise.all([
+      fetch(`${API_URL}/auth/me`, { headers }),
+      fetch(`${API_URL}/auth/api-key`, { headers }),
+    ]);
+
+    if (profileRes.status === 401) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('unauthed').classList.remove('hidden');
+      return;
+    }
+
+    const profile = await profileRes.json();
+    document.getElementById('loading').classList.add('hidden');
+    document.getElementById('content').classList.remove('hidden');
+
+    // Stats
+    document.getElementById('stat-contributions').textContent = profile.total_contributions;
+    document.getElementById('stat-reuse').textContent = profile.total_reuse_count;
+    document.getElementById('stat-reputation').textContent = profile.reputation_score.toFixed(1);
+
+    // Profile
+    document.getElementById('profile-handle').textContent = '@' + profile.handle;
+    document.getElementById('profile-email').textContent = profile.email;
+    document.getElementById('profile-since').textContent = new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    document.getElementById('display-name-input').value = profile.display_name || '';
+
+    // API key
+    if (keyRes.ok) {
+      const { api_key } = await keyRes.json();
+      document.getElementById('api-key-input').value = api_key;
+    } else {
+      document.getElementById('api-key-error').textContent = 'Could not load API key.';
+      document.getElementById('api-key-error').classList.remove('hidden');
+    }
+
+    // Toggle show/hide
+    const keyInput = document.getElementById('api-key-input');
+    const toggleBtn = document.getElementById('api-key-toggle');
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = keyInput.type === 'password';
+      keyInput.type = isHidden ? 'text' : 'password';
+      toggleBtn.textContent = isHidden ? 'Hide' : 'Show';
+    });
+
+    // Copy
+    document.getElementById('api-key-copy').addEventListener('click', () => {
+      navigator.clipboard.writeText(keyInput.value).then(() => {
+        const btn = document.getElementById('api-key-copy');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+
+    // Save display name
+    const saveBtn = document.getElementById('display-name-save');
+    const msg = document.getElementById('display-name-msg');
+    saveBtn.addEventListener('click', async () => {
+      const display_name = document.getElementById('display-name-input').value.trim();
+      saveBtn.disabled = true;
+      msg.classList.add('hidden');
+      try {
+        const r = await fetch(`${API_URL}/auth/me`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ display_name: display_name || null }),
+        });
+        if (r.ok) {
+          msg.textContent = 'Saved.';
+          msg.className = 'text-xs mt-1 text-green-400';
+        } else {
+          const err = await r.json().catch(() => ({}));
+          msg.textContent = err.detail || 'Failed to save.';
+          msg.className = 'text-xs mt-1 text-red-400';
+        }
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+      } finally {
+        saveBtn.disabled = false;
+      }
+    });
+  }
+</script>
