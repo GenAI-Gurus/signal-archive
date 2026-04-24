@@ -10,8 +10,8 @@ router = APIRouter(tags=["search"])
 
 @router.get("", response_model=list[SearchResult])
 async def search_archive(
-    q: str = Query(..., min_length=3),
-    limit: int = Query(default=5, le=20),
+    q: str = Query(..., min_length=3, max_length=1000),
+    limit: int = Query(default=5, ge=1, le=20),
     db: AsyncSession = Depends(get_db),
     _jwt: dict = Depends(require_jwt),
 ):
@@ -19,20 +19,20 @@ async def search_archive(
     if not all(isinstance(v, (int, float)) for v in embedding):
         raise HTTPException(status_code=502, detail="Invalid embedding returned by upstream service")
     vector_literal = f"[{','.join(str(float(v)) for v in embedding)}]"
-    result = await db.execute(text(f"""
+    result = await db.execute(text("""
         SELECT
             id,
             title,
             synthesized_summary,
-            1 - (embedding <=> '{vector_literal}'::vector) AS similarity,
+            1 - (embedding <=> CAST(:vec AS vector)) AS similarity,
             artifact_count,
             reuse_count,
             last_updated_at
         FROM canonical_questions
         WHERE embedding IS NOT NULL
-        ORDER BY embedding <=> '{vector_literal}'::vector
+        ORDER BY embedding <=> CAST(:vec AS vector)
         LIMIT :limit
-    """), {"limit": limit})
+    """), {"vec": vector_literal, "limit": limit})
     rows = result.fetchall()
     return [
         SearchResult(

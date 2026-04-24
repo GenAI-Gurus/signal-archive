@@ -1,8 +1,8 @@
 import uuid
-from typing import Literal
+from typing import Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, text
+from sqlalchemy import select, text, update
 from database import get_db
 from models import CanonicalQuestion, ResearchArtifact, ReuseEvent
 from schemas import CanonicalQuestionResponse, ArtifactResponse, SearchResult
@@ -37,7 +37,7 @@ async def get_canonical(canonical_id: str, db: AsyncSession = Depends(get_db)):
 @router.get("/{canonical_id}/artifacts", response_model=list[ArtifactResponse])
 async def get_canonical_artifacts(
     canonical_id: str,
-    limit: int = 10,
+    limit: int = Query(default=10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -57,15 +57,15 @@ async def get_related(canonical_id: str, db: AsyncSession = Depends(get_db)):
     if not all(isinstance(v, (int, float)) for v in cq.embedding):
         return []
     vector_literal = f"[{','.join(str(float(v)) for v in cq.embedding)}]"
-    rows = await db.execute(text(f"""
+    rows = await db.execute(text("""
         SELECT id, title, synthesized_summary,
-               1 - (embedding <=> '{vector_literal}'::vector) AS similarity,
+               1 - (embedding <=> CAST(:vec AS vector)) AS similarity,
                artifact_count, reuse_count, last_updated_at
         FROM canonical_questions
         WHERE id != :id AND embedding IS NOT NULL
-        ORDER BY embedding <=> '{vector_literal}'::vector
+        ORDER BY embedding <=> CAST(:vec AS vector)
         LIMIT 5
-    """), {"id": canonical_id})
+    """), {"vec": vector_literal, "id": canonical_id})
     return [
         SearchResult(
             canonical_question_id=r[0], title=r[1], synthesized_summary=r[2],
@@ -76,12 +76,20 @@ async def get_related(canonical_id: str, db: AsyncSession = Depends(get_db)):
     ]
 
 @router.post("/{canonical_id}/reuse", status_code=201)
-async def record_reuse(canonical_id: str, reused_by: str = None, db: AsyncSession = Depends(get_db)):
+async def record_reuse(
+    canonical_id: str,
+    reused_by: Optional[str] = Query(default=None, max_length=32),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(CanonicalQuestion).where(CanonicalQuestion.id == canonical_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Canonical question not found")
     event = ReuseEvent(id=uuid.uuid4(), canonical_question_id=canonical_id, reused_by=reused_by)
     db.add(event)
     await db.execute(
-        text("UPDATE canonical_questions SET reuse_count = reuse_count + 1 WHERE id = :id"),
-        {"id": canonical_id},
+        update(CanonicalQuestion)
+        .where(CanonicalQuestion.id == canonical_id)
+        .values(reuse_count=CanonicalQuestion.reuse_count + 1)
     )
     await db.commit()
     return {"recorded": True}
