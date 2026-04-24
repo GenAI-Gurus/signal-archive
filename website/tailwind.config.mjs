@@ -1,3 +1,5 @@
+import typography from '@tailwindcss/typography';
+
 export default {
   content: ['./src/**/*.{astro,html,js}'],
   theme: {
@@ -12,4 +14,5 @@ export default {
       },
     },
   },
+  plugins: [typography],
 };

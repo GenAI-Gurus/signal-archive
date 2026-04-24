@@ -17,6 +17,7 @@ import Base from '../../layouts/Base.astro';
 
 <script>
   import { getCanonical, getCanonicalArtifacts, getRelated, submitFlag, el, link, BASE } from '../../lib/api.js';
+  import { marked } from 'marked';
 
   const id = new URLSearchParams(window.location.search).get('id');
   document.getElementById('back-link').href = `${BASE}/search`;
@@ -108,9 +109,10 @@ import Base from '../../layouts/Base.astro';
         const details = document.createElement('details');
         details.className = 'text-sm text-gray-400 mb-2';
         const summary = el('summary', 'cursor-pointer hover:text-white mb-2', 'Full research body');
-        const pre = el('pre', 'bg-gray-950 rounded p-4 text-xs text-gray-400 overflow-auto max-h-96 whitespace-pre-wrap mt-2 font-mono', a.full_body);
+        const bodyDiv = el('div', 'prose prose-invert prose-sm max-w-none bg-gray-950 rounded p-4 overflow-auto max-h-96 mt-2');
+        bodyDiv.innerHTML = marked.parse(a.full_body || '');
         details.appendChild(summary);
-        details.appendChild(pre);
+        details.appendChild(bodyDiv);
         card.appendChild(details);
         card.appendChild(buildProvenance(a));
         card.appendChild(buildFlagButtons(a.id));

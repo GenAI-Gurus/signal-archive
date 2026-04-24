@@ -8,9 +8,13 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "astro": "^4.15.0",
     "@astrojs/tailwind": "^5.1.0",
-    "tailwindcss": "^3.4.10",
-    "dompurify": "^3.1.6"
+    "astro": "^4.15.0",
+    "dompurify": "^3.1.6",
+    "marked": "^18.0.2",
+    "tailwindcss": "^3.4.10"
+  },
+  "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19"
   }
 }
