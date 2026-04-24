@@ -176,3 +176,52 @@ async def test_token_returns_401_for_invalid_key():
         app.dependency_overrides.clear()
 
     assert r.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_me_returns_own_profile():
+    import uuid
+    from unittest.mock import AsyncMock, MagicMock
+    from auth import create_jwt
+    from database import get_db
+    from main import app
+    from datetime import datetime
+
+    uid = str(uuid.uuid4())
+    token = create_jwt(uid, "myhandle", "me@example.com")
+
+    fake_contributor = MagicMock()
+    fake_contributor.handle = "myhandle"
+    fake_contributor.display_name = "My Name"
+    fake_contributor.email = "me@example.com"
+    fake_contributor.total_contributions = 5
+    fake_contributor.total_reuse_count = 12
+    fake_contributor.reputation_score = 3.7
+    fake_contributor.created_at = datetime(2026, 1, 1)
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(
+        scalar_one_or_none=lambda: fake_contributor
+    ))
+
+    async def override(): yield mock_db
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    finally:
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 200
+    body = r.json()
+    assert body["handle"] == "myhandle"
+    assert body["email"] == "me@example.com"
+    assert body["total_contributions"] == 5
+
+
+@pytest.mark.asyncio
+async def test_me_returns_401_without_token():
+    from main import app
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        r = await client.get("/auth/me")
+    assert r.status_code == 401

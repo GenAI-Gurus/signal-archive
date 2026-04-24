@@ -12,9 +12,9 @@ from models import Contributor, MagicLinkToken, CliSession
 from schemas import (
     MagicLinkRequest, MagicLinkVerify, AuthResponse,
     CliSessionResponse, CliSessionPoll,
-    TokenRequest, TokenResponse,
+    TokenRequest, TokenResponse, MeResponse,
 )
-from auth import hash_api_key, encrypt_api_key, decrypt_api_key, create_jwt, send_magic_link
+from auth import hash_api_key, encrypt_api_key, decrypt_api_key, create_jwt, send_magic_link, require_jwt
 
 FRONTEND_BASE = "https://genai-gurus.com/signal-archive"
 MAGIC_LINK_EXPIRY_MINUTES = 15
@@ -153,3 +153,18 @@ async def exchange_api_key(body: TokenRequest, db: AsyncSession = Depends(get_db
         handle=contributor.handle,
         email=contributor.email,
     )
+
+
+@router.get("/me", response_model=MeResponse)
+async def get_me(
+    db: AsyncSession = Depends(get_db),
+    jwt_payload: dict = Depends(require_jwt),
+):
+    """Return the authenticated caller's contributor profile."""
+    result = await db.execute(
+        select(Contributor).where(Contributor.id == jwt_payload["sub"])
+    )
+    contributor = result.scalar_one_or_none()
+    if not contributor:
+        raise HTTPException(status_code=404, detail="Contributor not found")
+    return contributor

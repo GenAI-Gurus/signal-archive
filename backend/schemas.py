@@ -122,3 +122,14 @@ class TokenResponse(BaseModel):
     jwt: str
     handle: str
     email: str
+
+class MeResponse(BaseModel):
+    handle: str
+    display_name: Optional[str] = None
+    email: str
+    total_contributions: int
+    total_reuse_count: int
+    reputation_score: float
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
