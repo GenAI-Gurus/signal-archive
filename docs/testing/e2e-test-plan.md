@@ -509,7 +509,7 @@ Manual verification of the frontend. Open a browser and:
 - Click a canonical question → see its artifacts listed
 
 ### 10.2 Search page
-- Log in via magic link (enter email → click link in inbox)
+- Log in via magic link: `POST /auth/request-login` (enter email → click link in inbox)
 - Visit `/search`
 - Search for "fine-tuning" → should return the LoRA/QLoRA artifact
 - Search for "vector database" → should return pgvector/Pinecone artifact

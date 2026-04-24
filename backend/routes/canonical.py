@@ -54,8 +54,6 @@ async def get_related(canonical_id: str, db: AsyncSession = Depends(get_db)):
     cq = result.scalar_one_or_none()
     if not cq or cq.embedding is None:
         return []
-    if not all(isinstance(v, (int, float)) for v in cq.embedding):
-        return []
     vector_literal = f"[{','.join(str(float(v)) for v in cq.embedding)}]"
     rows = await db.execute(text("""
         SELECT id, title, synthesized_summary,
