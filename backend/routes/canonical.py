@@ -22,7 +22,7 @@ async def list_canonical(
         "active": CanonicalQuestion.artifact_count.desc(),
     }[sort]
     result = await db.execute(
-        select(CanonicalQuestion).order_by(order_col).offset(offset).limit(limit)
+        select(CanonicalQuestion).order_by(order_col, CanonicalQuestion.id).offset(offset).limit(limit)
     )
     return result.scalars().all()
 

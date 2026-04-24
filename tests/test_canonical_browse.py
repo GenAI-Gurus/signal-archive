@@ -73,3 +73,9 @@ async def test_canonical_list_sort_popular():
 
     assert r.status_code == 200
     assert r.json()[0]["title"] == "Popular question"
+
+    # Verify the query was ordered by reuse_count (not last_updated_at)
+    stmt = mock_db.execute.call_args[0][0]
+    order_keys = [str(c) for c in stmt._order_by_clauses]
+    assert any("reuse_count" in k for k in order_keys)
+    assert not any("last_updated_at" in k for k in order_keys)
