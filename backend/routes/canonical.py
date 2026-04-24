@@ -1,5 +1,6 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
 from database import get_db
@@ -7,6 +8,23 @@ from models import CanonicalQuestion, ResearchArtifact, ReuseEvent
 from schemas import CanonicalQuestionResponse, ArtifactResponse, SearchResult
 
 router = APIRouter(tags=["canonical"])
+
+@router.get("", response_model=list[CanonicalQuestionResponse])
+async def list_canonical(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    sort: Literal["recent", "popular", "active"] = Query(default="recent"),
+    db: AsyncSession = Depends(get_db),
+):
+    order_col = {
+        "recent": CanonicalQuestion.last_updated_at.desc(),
+        "popular": CanonicalQuestion.reuse_count.desc(),
+        "active": CanonicalQuestion.artifact_count.desc(),
+    }[sort]
+    result = await db.execute(
+        select(CanonicalQuestion).order_by(order_col).offset(offset).limit(limit)
+    )
+    return result.scalars().all()
 
 @router.get("/{canonical_id}", response_model=CanonicalQuestionResponse)
 async def get_canonical(canonical_id: str, db: AsyncSession = Depends(get_db)):
