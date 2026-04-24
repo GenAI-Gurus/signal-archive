@@ -12,7 +12,7 @@ from models import Contributor, MagicLinkToken, CliSession
 from schemas import (
     MagicLinkRequest, MagicLinkVerify, AuthResponse,
     CliSessionResponse, CliSessionPoll,
-    TokenRequest, TokenResponse, MeResponse,
+    TokenRequest, TokenResponse, MeResponse, MePatch, ApiKeyResponse,
 )
 from auth import hash_api_key, encrypt_api_key, decrypt_api_key, create_jwt, send_magic_link, require_jwt
 
@@ -172,3 +172,46 @@ async def get_me(
     if not contributor:
         raise HTTPException(status_code=404, detail="Contributor not found")
     return contributor
+
+
+@router.patch("/me", response_model=MeResponse)
+async def patch_me(
+    body: MePatch,
+    db: AsyncSession = Depends(get_db),
+    jwt_payload: dict = Depends(require_jwt),
+):
+    """Update the authenticated caller's profile (display_name)."""
+    try:
+        sub_uuid = PyUUID(jwt_payload["sub"])
+    except (ValueError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+    result = await db.execute(
+        select(Contributor).where(Contributor.id == sub_uuid)
+    )
+    contributor = result.scalar_one_or_none()
+    if not contributor:
+        raise HTTPException(status_code=404, detail="Contributor not found")
+    if body.display_name is not None:
+        contributor.display_name = body.display_name
+    await db.commit()
+    await db.refresh(contributor)
+    return contributor
+
+
+@router.get("/api-key", response_model=ApiKeyResponse)
+async def get_api_key(
+    db: AsyncSession = Depends(get_db),
+    jwt_payload: dict = Depends(require_jwt),
+):
+    """Return the authenticated caller's api_key (decrypted)."""
+    try:
+        sub_uuid = PyUUID(jwt_payload["sub"])
+    except (ValueError, KeyError):
+        raise HTTPException(status_code=401, detail="Invalid token subject")
+    result = await db.execute(
+        select(Contributor).where(Contributor.id == sub_uuid)
+    )
+    contributor = result.scalar_one_or_none()
+    if not contributor:
+        raise HTTPException(status_code=404, detail="Contributor not found")
+    return ApiKeyResponse(api_key=decrypt_api_key(contributor.api_key_enc))

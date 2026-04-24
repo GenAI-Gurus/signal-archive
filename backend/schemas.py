@@ -133,3 +133,9 @@ class MeResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+class MePatch(BaseModel):
+    display_name: Optional[str] = None
+
+class ApiKeyResponse(BaseModel):
+    api_key: str
