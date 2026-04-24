@@ -1,9 +1,12 @@
+import logging
 import uuid
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from models import CanonicalQuestion
 from summarizer import synthesize_summary
+
+logger = logging.getLogger(__name__)
 
 SIMILARITY_THRESHOLD = 0.88
 
@@ -55,6 +58,11 @@ async def find_or_create_canonical(
                 {"summary": new_summary, "id": canonical_id},
             )
         except Exception:
+            logger.warning(
+                "synthesize_summary failed for canonical %s, falling back to count-only update",
+                canonical_id,
+                exc_info=True,
+            )
             await db.execute(
                 text(
                     "UPDATE canonical_questions"

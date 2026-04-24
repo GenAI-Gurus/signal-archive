@@ -39,6 +39,8 @@ async def test_returns_existing_canonical_when_similarity_high():
     assert result == existing_id
     assert created is False
     assert mock_db.execute.call_count == 3
+    update_call_kwargs = mock_db.execute.call_args_list[2][0][1]
+    assert update_call_kwargs["summary"] == "ORM synthesis."
 
 
 @pytest.mark.asyncio
