@@ -1,32 +1,39 @@
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 class CitationItem(BaseModel):
-    url: str
-    title: str
-    domain: str
+    url: str = Field(max_length=2000)
+    title: str = Field(max_length=500)
+    domain: str = Field(max_length=253)
+
+    @field_validator("url")
+    @classmethod
+    def url_must_be_http(cls, v: str) -> str:
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("Citation URL must use http or https")
+        return v
 
 class ClarifyingQA(BaseModel):
-    question: str
-    answer: str
+    question: str = Field(max_length=1000)
+    answer: str = Field(max_length=5000)
 
 class ArtifactSubmit(BaseModel):
     model_config = {"protected_namespaces": ()}
 
-    cleaned_question: str
-    cleaned_prompt: str
-    clarifying_qa: list[ClarifyingQA] = []
-    short_answer: str
-    full_body: str
-    citations: list[CitationItem]
+    cleaned_question: str = Field(max_length=2000)
+    cleaned_prompt: str = Field(max_length=20000)
+    clarifying_qa: list[ClarifyingQA] = Field(default=[], max_length=20)
+    short_answer: str = Field(max_length=2000)
+    full_body: str = Field(max_length=100000)
+    citations: list[CitationItem] = Field(max_length=50)
     run_date: datetime
-    worker_type: str
-    model_info: Optional[str] = None
-    source_domains: list[str] = []
+    worker_type: str = Field(max_length=100)
+    model_info: Optional[str] = Field(default=None, max_length=200)
+    source_domains: list[str] = Field(default=[], max_length=50)
     prompt_modified: bool = False
-    version: Optional[str] = None
+    version: Optional[str] = Field(default=None, max_length=50)
 
 class ArtifactResponse(BaseModel):
     model_config = {"from_attributes": True, "protected_namespaces": ()}
@@ -80,8 +87,8 @@ class ContributorResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 class ContributorCreate(BaseModel):
-    handle: str
-    display_name: Optional[str] = None
+    handle: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
+    display_name: Optional[str] = Field(default=None, max_length=100)
 
 class ContributorCreated(BaseModel):
     handle: str
@@ -97,8 +104,8 @@ class MagicLinkRequest(BaseModel):
 
 class MagicLinkVerify(BaseModel):
     token: str
-    handle: Optional[str] = None
-    display_name: Optional[str] = None
+    handle: Optional[str] = Field(default=None, min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_\-]+$")
+    display_name: Optional[str] = Field(default=None, max_length=100)
 
 class AuthResponse(BaseModel):
     jwt: str

@@ -17,7 +17,7 @@ class Contributor(Base):
     email = Column(String, unique=True, nullable=True)
     email_verified = Column(Boolean, default=False, nullable=False)
     api_key_enc = Column(Text, nullable=True)  # Fernet-encrypted copy of api_key
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class CanonicalQuestion(Base):
     __tablename__ = "canonical_questions"
@@ -27,8 +27,8 @@ class CanonicalQuestion(Base):
     embedding = Column(Vector(1536))
     artifact_count = Column(Integer, default=0)
     reuse_count = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
-    last_updated_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    last_updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class ResearchArtifact(Base):
     __tablename__ = "research_artifacts"
@@ -52,14 +52,14 @@ class ResearchArtifact(Base):
     stale_count = Column(Integer, default=0)
     weakly_sourced_count = Column(Integer, default=0)
     wrong_count = Column(Integer, default=0)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class CommunityFlag(Base):
     __tablename__ = "community_flags"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     artifact_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=False)
     flag_type = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class ReuseEvent(Base):
     __tablename__ = "reuse_events"
@@ -67,7 +67,7 @@ class ReuseEvent(Base):
     canonical_question_id = Column(UUID(as_uuid=True), ForeignKey("canonical_questions.id"), nullable=False)
     artifact_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=True)
     reused_by = Column(String)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class MagicLinkToken(Base):
     __tablename__ = "magic_link_tokens"
