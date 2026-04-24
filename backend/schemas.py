@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 class CitationItem(BaseModel):
     url: str
@@ -116,7 +116,7 @@ class CliSessionPoll(BaseModel):
     api_key: Optional[str] = None
 
 class TokenRequest(BaseModel):
-    api_key: str
+    api_key: str = Field(min_length=1)
 
 class TokenResponse(BaseModel):
     jwt: str

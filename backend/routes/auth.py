@@ -146,8 +146,10 @@ async def exchange_api_key(body: TokenRequest, db: AsyncSession = Depends(get_db
     contributor = result.scalar_one_or_none()
     if not contributor:
         raise HTTPException(status_code=401, detail="Invalid api_key")
+    if not contributor.email:
+        raise HTTPException(status_code=500, detail="Account has no email — re-register via magic link")
     return TokenResponse(
-        jwt=create_jwt(str(contributor.id), contributor.handle, contributor.email or ""),
+        jwt=create_jwt(str(contributor.id), contributor.handle, contributor.email),
         handle=contributor.handle,
-        email=contributor.email or "",
+        email=contributor.email,
     )
