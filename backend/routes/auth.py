@@ -94,7 +94,7 @@ async def verify_magic_link(body: MagicLinkVerify, db: AsyncSession = Depends(ge
         )
         cli_session = cli_result.scalar_one_or_none()
         if cli_session and not cli_session.claimed:
-            cli_session.api_key = api_key
+            cli_session.api_key = encrypt_api_key(api_key)
             cli_session.claimed = True
 
     token_row.used = True  # mark used only after all validation passes
@@ -134,7 +134,7 @@ async def poll_cli_session(session_id: PyUUID, db: AsyncSession = Depends(get_db
     if session.expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=410, detail="Session expired")
     if session.claimed and session.api_key:
-        return CliSessionPoll(ready=True, api_key=session.api_key)
+        return CliSessionPoll(ready=True, api_key=decrypt_api_key(session.api_key))
     return CliSessionPoll(ready=False)
 
 
