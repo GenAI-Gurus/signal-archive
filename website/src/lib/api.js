@@ -4,9 +4,9 @@ const API_URL = import.meta.env.PUBLIC_API_URL || 'https://signal-archive-api.fl
 
 export const BASE = import.meta.env.BASE_URL || '/signal-archive';
 
-export async function searchArchive(query, limit = 5) {
+export async function searchArchive(query, limit = 5, sort = 'relevance') {
   const res = await fetch(
-    `${API_URL}/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    `${API_URL}/search?q=${encodeURIComponent(query)}&limit=${limit}&sort=${sort}`,
     { headers: authHeaders() }
   );
   if (res.status === 401) return null;  // signal: not authenticated
