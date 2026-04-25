@@ -37,17 +37,24 @@ async def find_or_create_canonical(
 
         art_result = await db.execute(
             text(
-                "SELECT short_answer FROM research_artifacts"
+                "SELECT short_answer, quality_score FROM research_artifacts"
                 " WHERE canonical_question_id = :cid"
                 " ORDER BY created_at DESC LIMIT 10"
             ),
             {"cid": str(canonical_id)},
         )
-        existing_answers = [r[0] for r in art_result.fetchall()]
+        existing_rows = art_result.fetchall()
+        existing_answers = [r[0] for r in existing_rows]
+        existing_weights = [float(r[1]) if r[1] is not None else 50.0 for r in existing_rows]
+
+        # New artifact has no quality score yet — use neutral 50.0
         all_answers = [summary] + existing_answers
+        all_weights = [50.0] + existing_weights
 
         try:
-            new_summary = await synthesize_summary(canonical_title, all_answers)
+            new_summary = await synthesize_summary(
+                canonical_title, all_answers, weights=all_weights
+            )
             await db.execute(
                 text(
                     "UPDATE canonical_questions"
