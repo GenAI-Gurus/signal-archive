@@ -96,8 +96,8 @@ async def test_score_caps_at_100():
 
 
 @pytest.mark.asyncio
-async def test_llm_error_falls_back_to_zero_faithfulness():
-    """If LLM call raises, faithfulness defaults to 0 and function still returns a score."""
+async def test_llm_error_falls_back_to_neutral_faithfulness():
+    """If LLM call raises, faithfulness defaults to 0.5 and function still returns a score."""
     from quality import compute_quality_score
 
     source_domains = [f"domain{i}.com" for i in range(10)]
@@ -108,5 +108,5 @@ async def test_llm_error_falls_back_to_zero_faithfulness():
         mock_client.chat.completions.create = AsyncMock(side_effect=Exception("timeout"))
         score = await compute_quality_score(source_domains, full_body, short_answer)
 
-    # source: min(40, 10/20*40) = 20; word: min(30, 1000/2000*30) = 15; faith: 0
-    assert score == pytest.approx(35.0, abs=0.1)
+    # source: min(40, 10/20*40) = 20; word: min(30, 1000/2000*30) = 15; faith: 0.5 (fallback)
+    assert score == pytest.approx(50.0, abs=0.1)

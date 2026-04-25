@@ -30,11 +30,11 @@ async def _check_faithfulness(short_answer: str, full_body: str) -> float:
             max_tokens=5,
             temperature=0,
         )
-        verdict = resp.choices[0].message.content.strip().upper()
+        verdict = resp.choices[0].message.content.strip().upper().rstrip(".")
         return {"YES": 1.0, "PARTIAL": 0.5, "NO": 0.0}.get(verdict, 0.0)
     except Exception:
-        logger.warning("Faithfulness check failed; defaulting to 0.0", exc_info=True)
-        return 0.0
+        logger.warning("Faithfulness check failed; defaulting to 0.5", exc_info=True)
+        return 0.5
 
 
 async def compute_quality_score(
@@ -42,7 +42,7 @@ async def compute_quality_score(
     full_body: str,
     short_answer: str,
 ) -> float:
-    source_score = min(40.0, len(source_domains) / 20 * 40)
+    source_score = min(40.0, len(set(source_domains)) / 20 * 40)
     word_count = len(full_body.split())
     word_score = min(30.0, word_count / 2000 * 30)
     faithfulness = await _check_faithfulness(short_answer, full_body)
