@@ -58,6 +58,7 @@ async def submit_artifact(
         source_domains=body.source_domains,
         prompt_modified=body.prompt_modified,
         version=body.version,
+        supersedes_id=body.supersedes_id,
         embedding=embedding,
     )
     db.add(artifact)
