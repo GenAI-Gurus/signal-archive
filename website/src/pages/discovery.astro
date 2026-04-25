@@ -49,7 +49,7 @@ import Base from '../layouts/Base.astro';
       container.appendChild(el('p', 'text-gray-500 italic text-sm', 'Nothing yet.'));
       return;
     }
-    items.slice(0, 15).forEach((item, i) => {
+    items.slice(0, 5).forEach((item, i) => {
       const row = el('div', 'flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 mb-2');
       row.appendChild(el('span', 'text-xs font-mono text-gray-600 w-5', String(i + 1)));
       row.appendChild(link(hrefFn(item), 'flex-1 text-sm text-gray-300 hover:text-white hover:underline', titleFn(item)));

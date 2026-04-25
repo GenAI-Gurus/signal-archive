@@ -7,7 +7,7 @@ from typing import Optional
 
 router = APIRouter(tags=["discovery"])
 
-ANON_LIMIT = 3
+ANON_LIMIT = 5
 
 @router.get("/weekly")
 async def weekly_research(

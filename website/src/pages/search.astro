@@ -70,8 +70,8 @@ import SearchBox from '../components/SearchBox.astro';
   const loggedIn = isLoggedIn();
 
   const suggestionsEl = document.getElementById('suggestions');
-  if (!query) return;
 
+  if (query) {
   suggestionsEl?.classList.add('hidden');
   sortBarEl.classList.remove('hidden');
   const input = document.querySelector('input[name="q"]');
@@ -176,4 +176,5 @@ import SearchBox from '../components/SearchBox.astro';
   });
 
   runSearch(currentSort);
+  } // end if (query)
 </script>

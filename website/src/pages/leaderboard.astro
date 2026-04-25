@@ -21,17 +21,25 @@ import Base from '../layouts/Base.astro';
     items.forEach((c, i) => {
       const row = el('div', 'flex items-center gap-4 bg-gray-900 border border-gray-800 rounded-xl px-6 py-4');
       row.appendChild(el('span', 'text-2xl font-bold font-mono text-gray-700 w-8', String(i + 1)));
-      const info = el('div', 'flex-1');
+      const info = el('div', 'flex-1 min-w-0');
       info.appendChild(link(`${BASE}/contributor/?handle=${c.handle}`, 'font-semibold text-white hover:text-brand-400 transition-colors', c.display_name || c.handle));
       info.appendChild(el('div', 'text-xs text-gray-600 font-mono', '@' + c.handle));
       row.appendChild(info);
-      const stats = el('div', 'text-right text-xs text-gray-400 space-y-1');
+      const repScore = Math.round(c.reputation_score ?? 0);
+      const repColor = repScore >= 75 ? 'text-green-400 border-green-800 bg-green-900/20'
+                     : repScore >= 40 ? 'text-yellow-400 border-yellow-800 bg-yellow-900/20'
+                     : 'text-gray-400 border-gray-700 bg-gray-800/40';
+      const rep = el('div', 'text-center shrink-0');
+      rep.appendChild(el('div', `text-lg font-bold font-mono ${repScore >= 75 ? 'text-green-400' : repScore >= 40 ? 'text-yellow-400' : 'text-gray-400'}`, String(repScore)));
+      rep.appendChild(el('div', 'text-xs text-gray-600 uppercase tracking-wider', 'rep'));
+      row.appendChild(rep);
+      const stats = el('div', 'text-right text-xs text-gray-500 space-y-1 shrink-0');
       stats.appendChild(el('div', null, `📄 ${c.total_contributions}`));
       stats.appendChild(el('div', null, `♻️ ${c.total_reuse_count}`));
       row.appendChild(stats);
       container.appendChild(row);
     });
-    if (!isLoggedIn() && items.length >= 3) {
+    if (!isLoggedIn() && items.length >= 5) {
       const banner = document.createElement('div');
       banner.className = 'mt-4 p-4 bg-gray-900 border border-gray-800 rounded-xl text-center';
       const msg = document.createElement('p');
