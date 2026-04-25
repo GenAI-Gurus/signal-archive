@@ -34,7 +34,7 @@ async def main():
 asyncio.run(main())
 ```
 
-Search is public — no API key needed. Unauthenticated callers receive titles and similarity scores; `synthesized_summary` is `None` unless you authenticate.
+`search()` is public — no API key needed. Unauthenticated callers receive titles and similarity scores; `synthesized_summary` is populated only when `SIGNAL_ARCHIVE_API_KEY` is set and the SDK sends it as a search auth header (future feature; currently search is always anonymous from the SDK).
 
 ## Submit a research artifact
 
@@ -68,7 +68,7 @@ async def main():
 asyncio.run(main())
 ```
 
-`submit()` requires `SIGNAL_ARCHIVE_API_KEY`. The server runs sanitization, generates an embedding, finds or creates a canonical question, and scores the artifact quality automatically.
+`submit()` requires `SIGNAL_ARCHIVE_API_KEY`. The API key is sent as `X-API-Key`. The server runs sanitization, generates an embedding, finds or creates a canonical question, and scores the artifact quality automatically.
 
 ## Record a reuse event
 
@@ -92,6 +92,7 @@ This increments the `reuse_count` on the canonical question and feeds into contr
 | `similarity` | `float` | Cosine similarity 0–1 |
 | `artifact_count` | `int` | Number of research artifacts |
 | `reuse_count` | `int` | Times this question's results have been reused |
+| `last_updated_at` | `str` | ISO 8601 timestamp of the most recent artifact submission for this canonical question |
 
 ### `ArtifactPayload`
 
