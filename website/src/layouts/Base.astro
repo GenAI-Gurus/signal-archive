@@ -16,20 +16,50 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
   <meta name="description" content={description} />
 </head>
 <body class="min-h-screen flex flex-col">
-  <nav class="border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-    <a href={base + '/'} class="text-lg font-bold text-brand-400 font-mono">signal-archive</a>
-    <div class="flex gap-6 text-sm text-gray-400 items-center">
+  <nav class="border-b border-gray-800 px-6 py-4">
+    <div class="flex items-center justify-between">
+      <a href={base + '/'} class="text-lg font-bold text-brand-400 font-mono shrink-0">signal-archive</a>
+
+      <!-- Desktop nav -->
+      <div class="hidden md:flex gap-6 text-sm text-gray-400 items-center">
+        <a href={base + '/search'} class="hover:text-white">Search</a>
+        <a href={base + '/discovery'} class="hover:text-white">Discovery</a>
+        <a href={base + '/leaderboard'} class="hover:text-white">Leaderboard</a>
+        <a href={base + '/about'} class="hover:text-white">About</a>
+        <a href={base + '/api-reference'} class="hover:text-white">API</a>
+        <a href={base + '/get-started'} class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1 rounded-lg transition-colors text-xs font-semibold">Get Started</a>
+        <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank" class="hover:text-white">GitHub</a>
+        <span id="nav-auth" class="flex items-center gap-2">
+          <a id="nav-login" href={base + '/login'} class="hidden text-brand-400 hover:text-brand-300 text-xs font-semibold">Sign in</a>
+          <a id="nav-account" href={base + '/account'} class="hidden text-xs text-gray-400 hover:text-white font-mono"></a>
+          <button id="nav-logout" class="hidden text-xs text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
+        </span>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button id="nav-hamburger" class="md:hidden text-gray-400 hover:text-white p-1" aria-label="Open menu">
+        <svg id="icon-open" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div id="nav-mobile" class="hidden md:hidden pt-4 pb-2 flex flex-col gap-4 text-sm text-gray-400 border-t border-gray-800 mt-4">
       <a href={base + '/search'} class="hover:text-white">Search</a>
       <a href={base + '/discovery'} class="hover:text-white">Discovery</a>
       <a href={base + '/leaderboard'} class="hover:text-white">Leaderboard</a>
       <a href={base + '/about'} class="hover:text-white">About</a>
       <a href={base + '/api-reference'} class="hover:text-white">API</a>
-      <a href={base + '/get-started'} class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1 rounded-lg transition-colors text-xs font-semibold">Get Started</a>
       <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank" class="hover:text-white">GitHub</a>
-      <span id="nav-auth" class="flex items-center gap-2">
-        <a id="nav-login" href={base + '/login'} class="hidden text-brand-400 hover:text-brand-300 text-xs font-semibold">Sign in</a>
-        <a id="nav-account" href={base + '/account'} class="hidden text-xs text-gray-400 hover:text-white font-mono"></a>
-        <button id="nav-logout" class="hidden text-xs text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
+      <a href={base + '/get-started'} class="bg-brand-600 hover:bg-brand-500 text-white px-3 py-2 rounded-lg transition-colors text-xs font-semibold text-center">Get Started</a>
+      <span id="nav-auth-mobile" class="flex items-center gap-3">
+        <a id="nav-login-mobile" href={base + '/login'} class="hidden text-brand-400 hover:text-brand-300 text-xs font-semibold">Sign in</a>
+        <a id="nav-account-mobile" href={base + '/account'} class="hidden text-xs text-gray-400 hover:text-white font-mono"></a>
+        <button id="nav-logout-mobile" class="hidden text-xs text-gray-500 hover:text-red-400 transition-colors">Sign out</button>
       </span>
     </div>
   </nav>
@@ -44,20 +74,44 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
 <script>
   import { isLoggedIn, getHandle, clearToken } from '../lib/auth.js';
   import { BASE } from '../lib/api.js';
+
+  // Auth — desktop
   const loginEl = document.getElementById('nav-login');
   const accountEl = document.getElementById('nav-account');
   const logoutEl = document.getElementById('nav-logout');
+  // Auth — mobile
+  const loginMEl = document.getElementById('nav-login-mobile');
+  const accountMEl = document.getElementById('nav-account-mobile');
+  const logoutMEl = document.getElementById('nav-logout-mobile');
+
   if (isLoggedIn()) {
+    const handle = '@' + getHandle();
     loginEl.classList.add('hidden');
     accountEl.classList.remove('hidden');
-    accountEl.textContent = '@' + getHandle();
+    accountEl.textContent = handle;
     logoutEl.classList.remove('hidden');
+    loginMEl.classList.add('hidden');
+    accountMEl.classList.remove('hidden');
+    accountMEl.textContent = handle;
+    logoutMEl.classList.remove('hidden');
   } else {
     loginEl.classList.remove('hidden');
+    loginMEl.classList.remove('hidden');
   }
-  logoutEl.addEventListener('click', () => {
-    clearToken();
-    window.location.href = BASE + '/';
+
+  const logout = () => { clearToken(); window.location.href = BASE + '/'; };
+  logoutEl.addEventListener('click', logout);
+  logoutMEl.addEventListener('click', logout);
+
+  // Hamburger toggle
+  const hamburger = document.getElementById('nav-hamburger');
+  const mobileMenu = document.getElementById('nav-mobile');
+  const iconOpen = document.getElementById('icon-open');
+  const iconClose = document.getElementById('icon-close');
+  hamburger.addEventListener('click', () => {
+    const open = mobileMenu.classList.toggle('hidden');
+    iconOpen.classList.toggle('hidden', !open);
+    iconClose.classList.toggle('hidden', open);
   });
 </script>
 </body>
