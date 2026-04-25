@@ -42,6 +42,10 @@ import Base from '../../layouts/Base.astro';
     return div;
   }
 
+  function flagKey(artifactId, flagType) {
+    return `flag:${artifactId}:${flagType}`;
+  }
+
   function buildFlagButtons(artifactId) {
     const flags = [
       { type: 'useful', label: '👍 Useful', cls: 'text-green-400 border-green-800' },
@@ -51,14 +55,30 @@ import Base from '../../layouts/Base.astro';
     ];
     const container = el('div', 'flex gap-2 flex-wrap mt-4 pt-4 border-t border-gray-800');
     flags.forEach(f => {
-      const btn = el('button', `text-xs border px-3 py-1 rounded-full hover:opacity-80 cursor-pointer ${f.cls}`, f.label);
+      const alreadyFlagged = localStorage.getItem(flagKey(artifactId, f.type));
+      const label = alreadyFlagged ? '✓ ' + f.label : f.label;
+      const btn = el('button', `text-xs border px-3 py-1 rounded-full hover:opacity-80 cursor-pointer ${f.cls}`, label);
+      if (alreadyFlagged) btn.disabled = true;
       btn.addEventListener('click', async () => {
         const ok = await submitFlag(artifactId, f.type);
-        if (ok) { btn.textContent = '✓ ' + f.label; btn.disabled = true; }
+        if (ok) {
+          localStorage.setItem(flagKey(artifactId, f.type), '1');
+          btn.textContent = '✓ ' + f.label;
+          btn.disabled = true;
+        }
       });
       container.appendChild(btn);
     });
     return container;
+  }
+
+  function buildQualityBadge(score) {
+    if (score == null) return null;
+    const [label, cls] =
+      score >= 70 ? ['High quality', 'bg-green-900 text-green-300 border-green-700'] :
+      score >= 40 ? ['Medium quality', 'bg-yellow-900 text-yellow-300 border-yellow-700'] :
+                   ['Low quality', 'bg-red-900 text-red-300 border-red-700'];
+    return el('span', `text-xs border px-2 py-0.5 rounded-full font-mono ${cls}`, `${label} · ${score}`);
   }
 
   async function load() {
@@ -104,7 +124,11 @@ import Base from '../../layouts/Base.astro';
       artifacts.forEach(a => {
         const card = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 mb-4');
         const dateStr = new Date(a.run_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        card.appendChild(el('div', 'text-xs text-gray-500 font-mono mb-3', `${dateStr} · ${a.worker_type}`));
+        const header = el('div', 'flex items-center gap-3 mb-3');
+        header.appendChild(el('span', 'text-xs text-gray-500 font-mono', `${dateStr} · ${a.worker_type}`));
+        const badge = buildQualityBadge(a.quality_score);
+        if (badge) header.appendChild(badge);
+        card.appendChild(header);
         card.appendChild(el('p', 'text-gray-200 text-sm leading-relaxed mb-4', a.short_answer));
         const details = document.createElement('details');
         details.className = 'text-sm text-gray-400 mb-2';

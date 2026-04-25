@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     resend_api_key: str = ""
     jwt_secret: str = "dev-secret-change-in-prod"
     fernet_key: str = ""
+    similarity_threshold: float = 0.85
 
     @model_validator(mode="after")
     def check_secrets_in_production(self) -> "Settings":

@@ -5,10 +5,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 from models import CanonicalQuestion
 from summarizer import synthesize_summary
+from config import settings
 
 logger = logging.getLogger(__name__)
 
-SIMILARITY_THRESHOLD = 0.88
+SIMILARITY_THRESHOLD = settings.similarity_threshold
 
 
 async def find_or_create_canonical(
