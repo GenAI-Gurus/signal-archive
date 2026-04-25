@@ -42,6 +42,19 @@ async def submit_artifact(
         summary=body.short_answer,
     )
 
+    if body.supersedes_id is not None:
+        result = await db.execute(
+            select(ResearchArtifact).where(
+                ResearchArtifact.id == body.supersedes_id,
+                ResearchArtifact.canonical_question_id == canonical_id,
+            )
+        )
+        if not result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=422,
+                detail="supersedes_id must refer to an artifact in the same canonical question",
+            )
+
     artifact = ResearchArtifact(
         id=uuid.uuid4(),
         canonical_question_id=canonical_id,

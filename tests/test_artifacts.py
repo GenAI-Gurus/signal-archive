@@ -113,3 +113,88 @@ async def test_artifact_submit_schema_accepts_supersedes_id():
         supersedes_id=target_id,
     )
     assert sub.supersedes_id == target_id
+
+
+@pytest.mark.asyncio
+async def test_submit_with_valid_supersedes_id_returns_201():
+    """A supersedes_id that belongs to the same canonical is accepted."""
+    import uuid
+    fake_embedding = [0.1] * 1536
+    fake_contributor = MagicMock()
+    fake_contributor.id = uuid.uuid4()
+    canonical_id = str(uuid.uuid4())
+    superseded_id = str(uuid.uuid4())
+
+    existing_artifact = MagicMock()
+    existing_artifact.id = superseded_id
+
+    # execute call order after mocked helpers:
+    # 1. validate supersedes_id → returns existing_artifact
+    # 2. UPDATE contributors
+    # 3. (quality score) UPDATE research_artifacts
+    validate_result = MagicMock()
+    validate_result.scalar_one_or_none = MagicMock(return_value=existing_artifact)
+
+    mock_db = AsyncMock()
+    mock_db.add = MagicMock()
+    mock_db.commit = AsyncMock()
+    mock_db.refresh = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=validate_result)
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with patch("routes.artifacts.get_embedding", new_callable=AsyncMock, return_value=fake_embedding), \
+             patch("routes.artifacts.find_or_create_canonical", new_callable=AsyncMock, return_value=(canonical_id, True)), \
+             patch("routes.artifacts.get_contributor_from_key", new_callable=AsyncMock, return_value=fake_contributor), \
+             patch("routes.artifacts.compute_quality_score", new_callable=AsyncMock, return_value=70.0):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.post(
+                    "/artifacts",
+                    json={**VALID_SUBMISSION, "supersedes_id": superseded_id},
+                    headers={"X-API-Key": "test-key"},
+                )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_submit_with_invalid_supersedes_id_returns_422():
+    """A supersedes_id that does not belong to the same canonical is rejected with 422."""
+    import uuid
+    fake_embedding = [0.1] * 1536
+    fake_contributor = MagicMock()
+    fake_contributor.id = uuid.uuid4()
+    canonical_id = str(uuid.uuid4())
+    wrong_artifact_id = str(uuid.uuid4())
+
+    # Lookup returns None — the artifact is not in this canonical
+    validate_result = MagicMock()
+    validate_result.scalar_one_or_none = MagicMock(return_value=None)
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=validate_result)
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with patch("routes.artifacts.get_embedding", new_callable=AsyncMock, return_value=fake_embedding), \
+             patch("routes.artifacts.find_or_create_canonical", new_callable=AsyncMock, return_value=(canonical_id, True)), \
+             patch("routes.artifacts.get_contributor_from_key", new_callable=AsyncMock, return_value=fake_contributor):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.post(
+                    "/artifacts",
+                    json={**VALID_SUBMISSION, "supersedes_id": wrong_artifact_id},
+                    headers={"X-API-Key": "test-key"},
+                )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert "supersedes_id" in response.json()["detail"].lower()
