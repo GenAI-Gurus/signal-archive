@@ -204,6 +204,7 @@ async def test_submit_with_invalid_supersedes_id_returns_422():
 async def test_artifacts_list_default_excludes_superseded():
     """Default (include_superseded=false): query uses a NOT IN filter."""
     import uuid
+    from sqlalchemy.sql import operators
     canonical_id = str(uuid.uuid4())
 
     mock_db = AsyncMock()
@@ -222,8 +223,10 @@ async def test_artifacts_list_default_excludes_superseded():
         app.dependency_overrides.clear()
 
     assert r.status_code == 200
-    executed_query = str(mock_db.execute.call_args[0][0])
-    assert "NOT IN" in executed_query.upper() or "notin" in executed_query.lower()
+    stmt = mock_db.execute.call_args[0][0]
+    # Check for notin_ operator in the whereclause by inspecting the clause structure
+    where_clause_str = str(stmt.whereclause).upper()
+    assert "NOT IN" in where_clause_str or "NOTIN" in where_clause_str
 
 
 @pytest.mark.asyncio
@@ -248,5 +251,7 @@ async def test_artifacts_list_include_superseded_skips_filter():
         app.dependency_overrides.clear()
 
     assert r.status_code == 200
-    executed_query = str(mock_db.execute.call_args[0][0])
-    assert "NOT IN" not in executed_query.upper() and "notin" not in executed_query.lower()
+    stmt = mock_db.execute.call_args[0][0]
+    # Check for notin_ operator in the whereclause by inspecting the clause structure
+    where_clause_str = str(stmt.whereclause).upper()
+    assert "NOT IN" not in where_clause_str and "NOTIN" not in where_clause_str
