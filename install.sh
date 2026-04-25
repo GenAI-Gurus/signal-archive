@@ -31,9 +31,21 @@ fi
 echo "→ Installing dependencies"
 python3 -m pip install --quiet --upgrade httpx
 
-# Install Claude Code hooks globally
-echo "→ Installing Claude Code hooks"
-python3 "$INSTALL_DIR/claude_code_integration/setup.py" --global
+# Claude Code integration
+if command -v claude &>/dev/null; then
+  echo "→ Installing Claude Code hooks"
+  python3 "$INSTALL_DIR/claude_code_integration/setup.py" --global
+else
+  echo "→ Claude Code not found — skipping Claude Code hooks"
+fi
+
+# Codex CLI integration
+if command -v codex &>/dev/null; then
+  echo "→ Installing Codex CLI integration"
+  python3 "$INSTALL_DIR/codex_integration/setup.py"
+else
+  echo "→ Codex CLI not found — skipping Codex integration"
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -52,7 +64,7 @@ echo ""
 echo '     echo '"'"'export SIGNAL_ARCHIVE_API_KEY="your-key-here"'"'"' >> ~/.zshrc'
 echo '     source ~/.zshrc'
 echo ""
-echo "  3. Restart Claude Code — that's it."
+echo "  3. Restart Claude Code or Codex — that's it."
 echo ""
 echo "Archive: https://genai-gurus.com/signal-archive"
 echo "GitHub:  https://github.com/GenAI-Gurus/signal-archive"
