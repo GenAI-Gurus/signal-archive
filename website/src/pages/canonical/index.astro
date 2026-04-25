@@ -17,7 +17,10 @@ import Base from '../../layouts/Base.astro';
 
 <script>
   import { getCanonical, getCanonicalArtifacts, getRelated, submitFlag, el, link, BASE } from '../../lib/api.js';
+  import { isLoggedIn } from '../../lib/auth.js';
   import { marked } from 'marked';
+
+  const loggedIn = isLoggedIn();
 
   const id = new URLSearchParams(window.location.search).get('id');
   document.getElementById('back-link').href = `${BASE}/search`;
@@ -114,7 +117,13 @@ import Base from '../../layouts/Base.astro';
 
     const summaryBox = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 mb-8');
     summaryBox.appendChild(el('h2', 'text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3', 'Synthesized Answer'));
-    summaryBox.appendChild(el('p', 'text-gray-200 leading-relaxed', cq.synthesized_summary || 'Summary pending.'));
+    if (loggedIn) {
+      summaryBox.appendChild(el('p', 'text-gray-200 leading-relaxed', cq.synthesized_summary || 'Summary pending.'));
+    } else {
+      const nudge = el('div', 'text-center py-4');
+      nudge.innerHTML = `<p class="text-gray-500 text-sm mb-3">Sign in to read the synthesized answer.</p><a href="${BASE}/login" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">Sign in</a>`;
+      summaryBox.appendChild(nudge);
+    }
     content.appendChild(summaryBox);
 
     content.appendChild(el('h2', 'text-xl font-semibold text-white mb-4', 'Research Artifacts'));
@@ -130,14 +139,20 @@ import Base from '../../layouts/Base.astro';
         if (badge) header.appendChild(badge);
         card.appendChild(header);
         card.appendChild(el('p', 'text-gray-200 text-sm leading-relaxed mb-4', a.short_answer));
-        const details = document.createElement('details');
-        details.className = 'text-sm text-gray-400 mb-2';
-        const summary = el('summary', 'cursor-pointer hover:text-white mb-2', 'Full research body');
-        const bodyDiv = el('div', 'prose prose-invert prose-sm max-w-none bg-gray-950 rounded p-4 overflow-auto max-h-96 mt-2');
-        bodyDiv.innerHTML = marked.parse(a.full_body || '');
-        details.appendChild(summary);
-        details.appendChild(bodyDiv);
-        card.appendChild(details);
+        if (loggedIn) {
+          const details = document.createElement('details');
+          details.className = 'text-sm text-gray-400 mb-2';
+          const summary = el('summary', 'cursor-pointer hover:text-white mb-2', 'Full research body');
+          const bodyDiv = el('div', 'prose prose-invert prose-sm max-w-none bg-gray-950 rounded p-4 overflow-auto max-h-96 mt-2');
+          bodyDiv.innerHTML = marked.parse(a.full_body || '');
+          details.appendChild(summary);
+          details.appendChild(bodyDiv);
+          card.appendChild(details);
+        } else {
+          const gate = el('p', 'text-xs text-gray-600 mb-2 italic');
+          gate.innerHTML = `<a href="${BASE}/login" class="text-brand-400 hover:underline">Sign in</a> to read the full research body.`;
+          card.appendChild(gate);
+        }
         card.appendChild(buildProvenance(a));
         card.appendChild(buildFlagButtons(a.id));
         content.appendChild(card);
