@@ -110,3 +110,4 @@ This increments the `reuse_count` on the canonical question and feeds into contr
 | `model_info` | `Optional[str]` | No | Model used (e.g. `"gpt-4o"`) |
 | `clarifying_qa` | `list[dict]` | No | Clarifying Q&A pairs `[{"question": ..., "answer": ...}]` |
 | `version` | `Optional[str]` | No | Worker version string |
+| `supersedes_id` | `Optional[str]` | No | UUID of the artifact this run supersedes (pass when replacing stale research) |

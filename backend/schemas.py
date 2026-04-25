@@ -34,6 +34,7 @@ class ArtifactSubmit(BaseModel):
     source_domains: list[str] = Field(default=[], max_length=50)
     prompt_modified: bool = False
     version: Optional[str] = Field(default=None, max_length=50)
+    supersedes_id: Optional[UUID] = None
 
 class ArtifactResponse(BaseModel):
     model_config = {"from_attributes": True, "protected_namespaces": ()}
@@ -54,6 +55,7 @@ class ArtifactResponse(BaseModel):
     stale_count: int
     weakly_sourced_count: int
     wrong_count: int
+    supersedes_id: Optional[UUID] = None
     quality_score: Optional[float] = None
     created_at: datetime
 

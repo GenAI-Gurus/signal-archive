@@ -30,6 +30,7 @@ class ArchiveClient:
             "source_domains": payload.source_domains,
             "prompt_modified": payload.prompt_modified,
             "version": payload.version,
+            "supersedes_id": str(payload.supersedes_id) if payload.supersedes_id else None,
         }
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(

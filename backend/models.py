@@ -52,6 +52,7 @@ class ResearchArtifact(Base):
     stale_count = Column(Integer, default=0)
     weakly_sourced_count = Column(Integer, default=0)
     wrong_count = Column(Integer, default=0)
+    supersedes_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=True)
     quality_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

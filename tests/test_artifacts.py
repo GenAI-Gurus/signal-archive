@@ -60,3 +60,56 @@ async def test_submit_artifact_with_valid_key_returns_201():
     data = response.json()
     assert "id" in data
     assert "canonical_question_id" in data
+
+
+@pytest.mark.asyncio
+async def test_artifact_response_schema_includes_supersedes_id():
+    """ArtifactResponse schema has supersedes_id field (None when not set)."""
+    from schemas import ArtifactResponse
+    import uuid
+    from datetime import datetime, timezone
+
+    resp = ArtifactResponse(
+        id=uuid.uuid4(),
+        canonical_question_id=uuid.uuid4(),
+        contributor_handle=None,
+        cleaned_question="q",
+        short_answer="a",
+        full_body="body",
+        citations=[],
+        run_date=datetime.now(timezone.utc),
+        worker_type="test",
+        source_domains=[],
+        prompt_modified=False,
+        useful_count=0,
+        stale_count=0,
+        weakly_sourced_count=0,
+        wrong_count=0,
+        created_at=datetime.now(timezone.utc),
+        supersedes_id=None,
+    )
+    assert resp.supersedes_id is None
+    assert hasattr(resp, "supersedes_id")
+
+
+@pytest.mark.asyncio
+async def test_artifact_submit_schema_accepts_supersedes_id():
+    """ArtifactSubmit schema accepts an optional supersedes_id UUID."""
+    from schemas import ArtifactSubmit
+    import uuid
+    from datetime import datetime, timezone
+
+    target_id = uuid.uuid4()
+    sub = ArtifactSubmit(
+        cleaned_question="What is X?",
+        cleaned_prompt="Research X.",
+        short_answer="X is Y.",
+        full_body="Details.",
+        citations=[],
+        run_date=datetime.now(timezone.utc),
+        worker_type="test",
+        source_domains=[],
+        prompt_modified=False,
+        supersedes_id=target_id,
+    )
+    assert sub.supersedes_id == target_id
