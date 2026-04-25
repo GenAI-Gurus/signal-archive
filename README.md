@@ -191,4 +191,4 @@ signal-archive/
 
 Pull requests welcome. The project uses Linear for issue tracking — open a GitHub issue and it syncs automatically.
 
-Built by [GenAI Gurus](https://genaigurus.com).
+Built by [GenAI Gurus](https://genai-gurus.com).
