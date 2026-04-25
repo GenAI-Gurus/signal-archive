@@ -91,7 +91,7 @@ The sanitizer runs locally before any data leaves your machine.
 ## Implemented features
 
 ### Core archive
-- **Canonical question clustering** — semantic deduplication via pgvector (threshold 0.88). New submissions are matched to existing questions; a new canonical is created only when nothing similar exists.
+- **Canonical question clustering** — semantic deduplication via pgvector. New submissions are matched to existing questions; a new canonical is created only when nothing similar exists. Threshold configurable via `SIMILARITY_THRESHOLD` env var (default 0.85).
 - **Research artifacts** — full research body, short answer, citations, source domains, provenance (worker type, run date, model info).
 - **Synthesized summaries** — when a canonical question accumulates multiple artifacts, gpt-4o-mini generates a 2–3 sentence synthesis of the collective findings. Shown on the browse page.
 - **Related questions** — vector similarity search surfaces the 5 most similar canonical questions on each artifact page.
@@ -101,7 +101,8 @@ The sanitizer runs locally before any data leaves your machine.
   - Source breadth: up to 40 pts (scaled to 20 unique source domains)
   - Body depth: up to 30 pts (scaled to 2000 words)
   - Faithfulness: up to 30 pts (LLM checks whether the short answer reflects the full body)
-- **Community flags** — readers can flag artifacts as Useful, Stale, Weak sources, or Wrong. Counts are stored and factored into contributor reputation.
+  - Score shown as a colored badge (High ≥70 / Medium ≥40 / Low <40) on each artifact card
+- **Community flags** — readers can flag artifacts as Useful, Stale, Weak sources, or Wrong. Counts are stored and factored into contributor reputation. Flag state persists in `localStorage` so buttons stay disabled across page reloads without requiring an account.
 - **Contributor reputation** — daily batch job scores each contributor based on reuse ratio and community flag ratio (0–100 scale). Leaderboard on the website.
 
 ### Identity & accounts
@@ -154,11 +155,6 @@ signal-archive/
 ---
 
 ## What's next
-
-### High priority
-- **Flag deduplication** — currently anyone can flag the same artifact multiple times. Deduplicate by session/IP or require auth to flag. Without this, flag counts are gameable.
-- **Quality score on the UI** — `quality_score` is in the API response but not yet shown on artifact cards or the browse page. Add a simple badge (e.g. green/yellow/red tier).
-- **Canonical similarity threshold tuning** — 0.88 is strict. "AI chatbot comparison" and "enterprise chatbot feature matrix" don't cluster. Consider lowering to 0.84–0.86 or making it configurable.
 
 ### Medium priority
 - **Search without auth** — semantic search currently requires a JWT. Opening it to anonymous users (with rate limiting) would improve discoverability.
