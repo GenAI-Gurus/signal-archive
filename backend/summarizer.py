@@ -11,9 +11,9 @@ async def synthesize_summary(
 ) -> str:
     if not short_answers:
         return ""
-    if weights and len(weights) == len(short_answers):
+    if weights is not None and len(weights) == len(short_answers):
         paired = sorted(zip(weights, short_answers), key=lambda x: x[0], reverse=True)[:10]
-        answers_text = "\n".join(f"- [score: {int(w)}] {a}" for w, a in paired)
+        answers_text = "\n".join(f"- [score: {round(w)}] {a}" for w, a in paired)
         system_content = (
             "You are a research librarian. Write a 2–3 sentence synthesis of "
             "the key findings below, in plain English. Be concise and factual. "
