@@ -52,6 +52,7 @@ class ResearchArtifact(Base):
     stale_count = Column(Integer, default=0)
     weakly_sourced_count = Column(Integer, default=0)
     wrong_count = Column(Integer, default=0)
+    quality_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class CommunityFlag(Base):

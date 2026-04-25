@@ -54,6 +54,7 @@ class ArtifactResponse(BaseModel):
     stale_count: int
     weakly_sourced_count: int
     wrong_count: int
+    quality_score: Optional[float] = None
     created_at: datetime
 
 class CanonicalQuestionResponse(BaseModel):
