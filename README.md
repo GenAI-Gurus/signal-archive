@@ -88,21 +88,89 @@ The sanitizer runs locally before any data leaves your machine.
 
 ---
 
+## Implemented features
+
+### Core archive
+- **Canonical question clustering** — semantic deduplication via pgvector (threshold 0.88). New submissions are matched to existing questions; a new canonical is created only when nothing similar exists.
+- **Research artifacts** — full research body, short answer, citations, source domains, provenance (worker type, run date, model info).
+- **Synthesized summaries** — when a canonical question accumulates multiple artifacts, gpt-4o-mini generates a 2–3 sentence synthesis of the collective findings. Shown on the browse page.
+- **Related questions** — vector similarity search surfaces the 5 most similar canonical questions on each artifact page.
+
+### Quality & trust
+- **Automated quality scoring** — each artifact is scored 0–100 at submission time:
+  - Source breadth: up to 40 pts (scaled to 20 unique source domains)
+  - Body depth: up to 30 pts (scaled to 2000 words)
+  - Faithfulness: up to 30 pts (LLM checks whether the short answer reflects the full body)
+- **Community flags** — readers can flag artifacts as Useful, Stale, Weak sources, or Wrong. Counts are stored and factored into contributor reputation.
+- **Contributor reputation** — daily batch job scores each contributor based on reuse ratio and community flag ratio (0–100 scale). Leaderboard on the website.
+
+### Identity & accounts
+- **API-key contributors** — register with a handle only, no email required. API key is returned once and stored encrypted.
+- **Magic link auth** — email-based login flow for the website. JWTs valid 30 days.
+- **Account page** — view reputation, contribution count, reuse count; update display name; reveal API key.
+
+### Website (Astro, GitHub Pages)
+- Browse page — paginated canonical questions, sortable by Recent / Popular / Active
+- Artifact detail page — full research body rendered as markdown, provenance card, community flags, related questions
+- Search page — semantic similarity search with JWT auth
+- Leaderboard — top contributors by reputation
+- Discovery — emerging topics (recent canonicals with low artifact count)
+- Get Started, API Reference, About pages
+
+### Infrastructure
+- FastAPI backend on Fly.io (2 machines, rolling deploys)
+- Supabase Postgres + pgvector extension
+- Daily reputation batch via Fly.io scheduled machines
+- GitHub Actions → GitHub Pages for website deploys
+- Full async (SQLAlchemy async, asyncpg, OpenAI async client)
+
+---
+
 ## Architecture
 
 ```
 signal-archive/
-├── .claude-plugin/   Plugin manifest + marketplace.json
-├── hooks/            pre_task.py (UserPromptSubmit) + post_task.py (Stop)
-├── commands/         /signal-archive slash command
-├── backend/          FastAPI + SQLAlchemy, deployed on Fly.io
-├── sanitizer/        Local sanitizer (strips private content before submission)
-├── worker_sdk/       Python client for the archive API
-├── reputation/       Daily batch scorer for contributor reputation
-└── website/          Astro static site on GitHub Pages
+├── .claude-plugin/      Plugin manifest + marketplace.json
+├── hooks/               pre_task.py (UserPromptSubmit) + post_task.py (Stop)
+├── commands/            /signal-archive slash command
+├── backend/             FastAPI + SQLAlchemy, deployed on Fly.io
+│   ├── routes/          artifacts, canonical, flags, search, auth, contributors, discovery
+│   ├── quality.py       Automated quality scorer
+│   ├── summarizer.py    LLM synthesis of canonical question findings
+│   ├── canonical.py     Semantic dedup + canonical management
+│   └── migrations/      SQL migration files
+├── batch/               One-off and scheduled batch scripts
+│   ├── backfill.py      Regenerate synthesized summaries
+│   └── quality_backfill.py  Score existing artifacts
+├── reputation/          Daily reputation scorer + Fly.io runner
+├── sanitizer/           Local sanitizer (strips private content before submission)
+├── worker_sdk/          Python client for the archive API
+├── tests/               pytest-asyncio test suite
+└── website/             Astro static site on GitHub Pages
 ```
 
-**Tech stack:** Python 3.11, FastAPI, SQLAlchemy async, pgvector on Supabase, Fly.io, Astro 4
+**Tech stack:** Python 3.11, FastAPI, SQLAlchemy async, pgvector on Supabase, Fly.io, Astro 4, OpenAI gpt-4o-mini, Tailwind CSS
+
+---
+
+## What's next
+
+### High priority
+- **Flag deduplication** — currently anyone can flag the same artifact multiple times. Deduplicate by session/IP or require auth to flag. Without this, flag counts are gameable.
+- **Quality score on the UI** — `quality_score` is in the API response but not yet shown on artifact cards or the browse page. Add a simple badge (e.g. green/yellow/red tier).
+- **Canonical similarity threshold tuning** — 0.88 is strict. "AI chatbot comparison" and "enterprise chatbot feature matrix" don't cluster. Consider lowering to 0.84–0.86 or making it configurable.
+
+### Medium priority
+- **Search without auth** — semantic search currently requires a JWT. Opening it to anonymous users (with rate limiting) would improve discoverability.
+- **Artifact versioning** — when a canonical has multiple artifacts on the same topic, there's no way to mark one as superseding another. A `supersedes` FK would let the UI hide outdated research.
+- **Worker SDK documentation** — `worker_sdk/` exists but isn't documented. A short guide on how to build a worker that submits research programmatically would unlock third-party contributors.
+- **Reuse tracking from the plugin** — the pre-task hook surfaces results but doesn't automatically record a reuse event. Wiring `POST /canonical/{id}/reuse` into the hook would make reuse counts accurate.
+
+### Lower priority / ideas
+- **Quality score in canonical synthesis** — currently all artifacts contribute equally to the synthesized summary. Weighting by `quality_score` would surface better research first.
+- **Staleness detection** — flag artifacts as stale automatically when the canonical question's topic is time-sensitive and the `run_date` is older than N months.
+- **Multi-language support** — embeddings are language-agnostic; the sanitizer and summarizer are English-only.
+- **Contributor profiles page** — the `/contributor?handle=x` page exists but links to it aren't surfaced anywhere in the nav.
 
 ---
 
