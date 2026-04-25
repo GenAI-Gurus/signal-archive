@@ -75,3 +75,55 @@ async def test_modified_prompt_shows_cleaned_version():
 
     assert "cleaned" in output.lower() or "modified" in output.lower()
     assert "Research the top AI startups founded in 2023." in output
+
+@pytest.mark.asyncio
+async def test_reuse_recorded_for_strong_matches():
+    """record_reuse is called once per strong match when results are found."""
+    clean_result = SanitizationResult(
+        cleaned_prompt="What are the best vector databases in 2025?",
+        was_modified=False, removed_categories=[], safe_to_submit=True, reason=""
+    )
+    matches = [
+        SearchMatch(canonical_question_id="cq-1", title="VDB 1", synthesized_summary="s",
+                    similarity=0.92, artifact_count=2, reuse_count=5, last_updated_at="2026-01-01"),
+        SearchMatch(canonical_question_id="cq-2", title="VDB 2", synthesized_summary="s",
+                    similarity=0.85, artifact_count=1, reuse_count=0, last_updated_at="2026-01-01"),
+    ]
+
+    with patch("claude_code_integration.hooks.pre_task.sanitize_prompt", return_value=clean_result), \
+         patch("claude_code_integration.hooks.pre_task.ArchiveClient") as mock_cls:
+        mock_client = AsyncMock()
+        mock_client.search = AsyncMock(return_value=matches)
+        mock_client.record_reuse = AsyncMock()
+        mock_cls.return_value = mock_client
+
+        await run_hook("What are the best vector databases in 2025?")
+
+    assert mock_client.record_reuse.call_count == 2
+    mock_client.record_reuse.assert_any_call("cq-1")
+    mock_client.record_reuse.assert_any_call("cq-2")
+
+
+@pytest.mark.asyncio
+async def test_reuse_failure_does_not_break_hook():
+    """If record_reuse raises, run_hook still returns output."""
+    clean_result = SanitizationResult(
+        cleaned_prompt="What is eventual consistency?",
+        was_modified=False, removed_categories=[], safe_to_submit=True, reason=""
+    )
+    matches = [
+        SearchMatch(canonical_question_id="cq-99", title="Consistency models",
+                    synthesized_summary="s", similarity=0.90, artifact_count=1,
+                    reuse_count=0, last_updated_at="2026-01-01"),
+    ]
+
+    with patch("claude_code_integration.hooks.pre_task.sanitize_prompt", return_value=clean_result), \
+         patch("claude_code_integration.hooks.pre_task.ArchiveClient") as mock_cls:
+        mock_client = AsyncMock()
+        mock_client.search = AsyncMock(return_value=matches)
+        mock_client.record_reuse = AsyncMock(side_effect=Exception("network error"))
+        mock_cls.return_value = mock_client
+
+        output = await run_hook("What is eventual consistency?")
+
+    assert "Signal Archive" in output
