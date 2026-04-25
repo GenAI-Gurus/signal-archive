@@ -46,12 +46,6 @@ async def test_search_returns_results():
     assert results[0]["similarity"] == 0.95
 
 @pytest.mark.asyncio
-async def test_search_requires_auth():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        response = await client.get("/search?q=hello")
-    assert response.status_code == 401
-
-@pytest.mark.asyncio
 async def test_search_accepts_valid_jwt():
     import uuid
     from datetime import datetime
@@ -70,3 +64,64 @@ async def test_search_accepts_valid_jwt():
     finally:
         app.dependency_overrides.clear()
     assert r.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_search_anonymous_returns_titles_only():
+    """Anonymous callers get 200 with synthesized_summary=None on all results."""
+    import uuid
+    from datetime import datetime
+    fake_embedding = [0.1] * 1536
+    fake_rows = [(str(uuid.uuid4()), "Vector databases overview", "Full summary text", 0.90, 2, 3, datetime(2026, 4, 1))]
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: fake_rows))
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    try:
+        with patch("routes.search.get_embedding", new_callable=AsyncMock, return_value=fake_embedding):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.get("/search?q=vector+databases")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    results = response.json()
+    assert len(results) == 1
+    assert results[0]["title"] == "Vector databases overview"
+    assert results[0]["synthesized_summary"] is None
+
+
+@pytest.mark.asyncio
+async def test_search_authenticated_returns_full_summary():
+    """Authenticated callers get synthesized_summary populated."""
+    import uuid
+    from datetime import datetime
+    from auth import create_jwt
+    fake_embedding = [0.1] * 1536
+    fake_rows = [(str(uuid.uuid4()), "Vector databases overview", "Full summary text", 0.90, 2, 3, datetime(2026, 4, 1))]
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock(return_value=MagicMock(fetchall=lambda: fake_rows))
+
+    async def override_get_db():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    token = create_jwt("u1", "alice", "a@example.com")
+    try:
+        with patch("routes.search.get_embedding", new_callable=AsyncMock, return_value=fake_embedding):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                response = await client.get(
+                    "/search?q=vector+databases",
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    results = response.json()
+    assert results[0]["synthesized_summary"] == "Full summary text"
