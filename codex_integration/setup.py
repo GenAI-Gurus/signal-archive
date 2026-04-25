@@ -8,9 +8,8 @@ Usage:
 from pathlib import Path
 
 TEMPLATE_PATH = Path(__file__).parent / "instructions_template.md"
-HOOKS_DIR = (Path(__file__).parent / "hooks").resolve()
 GUARD_START = "<!-- Signal Archive Integration"
-GUARD_END = "<!-- End Signal Archive Integration -->"
+INSTALL_HOOKS_DIR = "~/.signal-archive/codex_integration/hooks"
 
 
 def install():
@@ -31,8 +30,8 @@ def install():
 
     instructions_path.write_text(updated)
     print(f"✓ Signal Archive integration installed in {instructions_path}")
-    print(f"  Pre-task search:  python3 {HOOKS_DIR}/pre_task.py")
-    print(f"  Post-task submit: python3 {HOOKS_DIR}/post_task.py")
+    print(f"  Pre-task search:  python3 {INSTALL_HOOKS_DIR}/pre_task.py")
+    print(f"  Post-task submit: python3 {INSTALL_HOOKS_DIR}/post_task.py")
     print("""
 Next steps:
   1. Register as a contributor:
