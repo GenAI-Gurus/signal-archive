@@ -68,3 +68,54 @@ async def test_synthesize_summary_returns_empty_string_for_no_answers():
 
     mock_client.chat.completions.create.assert_not_called()
     assert result == ""
+
+
+@pytest.mark.asyncio
+async def test_synthesize_summary_sorts_by_weight_descending():
+    """When weights are provided, higher-weight answers appear first and carry quality badges."""
+    from summarizer import synthesize_summary
+
+    fake_choice = MagicMock()
+    fake_choice.message.content = "Summary."
+    fake_response = MagicMock()
+    fake_response.choices = [fake_choice]
+    mock_create = AsyncMock(return_value=fake_response)
+
+    with patch("summarizer._client") as mock_client:
+        mock_client.chat.completions.create = mock_create
+        await synthesize_summary(
+            question="Which vector DB is best?",
+            short_answers=["Low quality answer.", "High quality answer."],
+            weights=[20.0, 90.0],
+        )
+
+    user_msg = mock_create.call_args.kwargs["messages"][-1]["content"]
+    # High-quality answer (weight 90) must appear before low-quality (weight 20)
+    assert user_msg.index("High quality") < user_msg.index("Low quality")
+    # Quality scores annotated in the prompt
+    assert "90" in user_msg
+    assert "20" in user_msg
+
+
+@pytest.mark.asyncio
+async def test_synthesize_summary_without_weights_unchanged():
+    """Calling without weights preserves existing behavior (no quality badges)."""
+    from summarizer import synthesize_summary
+
+    fake_choice = MagicMock()
+    fake_choice.message.content = "Summary."
+    fake_response = MagicMock()
+    fake_response.choices = [fake_choice]
+    mock_create = AsyncMock(return_value=fake_response)
+
+    with patch("summarizer._client") as mock_client:
+        mock_client.chat.completions.create = mock_create
+        result = await synthesize_summary(
+            question="Question?",
+            short_answers=["Answer A.", "Answer B."],
+        )
+
+    assert result == "Summary."
+    user_msg = mock_create.call_args.kwargs["messages"][-1]["content"]
+    # No quality scores when weights not provided
+    assert "score:" not in user_msg
