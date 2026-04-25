@@ -11,11 +11,11 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
     type="search"
     name="q"
     placeholder="Search public research questions..."
-    class={`flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 ${large ? 'py-4 text-lg' : 'py-3'}`}
+    class={`min-w-0 flex-1 bg-gray-900 border border-gray-700 rounded-lg px-4 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500 ${large ? 'py-4 text-lg' : 'py-3'}`}
   />
   <button
     type="submit"
-    class={`bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg transition-colors ${large ? 'px-8 py-4' : 'px-6 py-3'}`}
+    class={`shrink-0 bg-brand-600 hover:bg-brand-500 text-white font-semibold rounded-lg transition-colors ${large ? 'px-5 sm:px-8 py-4' : 'px-4 sm:px-6 py-3'}`}
   >
     Search
   </button>

@@ -71,7 +71,7 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
     });
   }
 
-  getWeeklyResearch().then(items =>
+  getWeeklyResearch().catch(() => []).then(items =>
     renderList('weekly-list', items,
       i => `${BASE}/canonical/?id=${i.canonical_question_id}`,
       i => i.title,
@@ -79,7 +79,7 @@ const base = import.meta.env.BASE_URL || '/signal-archive';
     )
   );
 
-  getTopReused().then(items =>
+  getTopReused().catch(() => []).then(items =>
     renderList('reused-list', items,
       i => `${BASE}/canonical/?id=${i.canonical_question_id}`,
       i => i.title,

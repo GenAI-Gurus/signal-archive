@@ -58,16 +58,16 @@ import Base from '../layouts/Base.astro';
     });
   }
 
-  getWeeklyResearch().then(d => {
+  getWeeklyResearch().catch(() => []).then(d => {
     renderRows('weekly', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `${i.run_count} runs`);
     appendGateBanner('weekly', d.length);
   });
-  getTopReused().then(d => {
+  getTopReused().catch(() => []).then(d => {
     renderRows('reused', d, i => `${BASE}/canonical/?id=${i.canonical_question_id}`, i => i.title, i => `♻️ ${i.reuse_count}`);
     appendGateBanner('reused', d.length);
   });
 
-  getEmerging().then(items => {
+  getEmerging().catch(() => []).then(items => {
     const container = document.getElementById('emerging');
     if (!items.length) {
       container.appendChild(el('p', 'text-gray-500 italic text-sm', 'No emerging topics yet.'));
