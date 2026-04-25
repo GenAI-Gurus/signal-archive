@@ -1,4 +1,5 @@
 import uuid
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, text
@@ -9,6 +10,9 @@ from schemas import ArtifactSubmit, ArtifactResponse
 from embeddings import get_embedding
 from canonical import find_or_create_canonical
 from auth import hash_api_key
+from quality import compute_quality_score
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["artifacts"])
 
@@ -63,6 +67,21 @@ async def submit_artifact(
     )
     await db.commit()
     await db.refresh(artifact)
+
+    try:
+        score = await compute_quality_score(
+            source_domains=artifact.source_domains or [],
+            full_body=artifact.full_body,
+            short_answer=artifact.short_answer,
+        )
+        await db.execute(
+            text("UPDATE research_artifacts SET quality_score = :score WHERE id = :id"),
+            {"score": score, "id": str(artifact.id)},
+        )
+        await db.commit()
+    except Exception:
+        logger.warning("Quality scoring failed for artifact %s", artifact.id, exc_info=True)
+
     return {"id": str(artifact.id), "canonical_question_id": str(canonical_id)}
 
 @router.get("/{artifact_id}", response_model=ArtifactResponse)
