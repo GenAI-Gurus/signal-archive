@@ -38,13 +38,22 @@ async def get_canonical(canonical_id: str, db: AsyncSession = Depends(get_db)):
 async def get_canonical_artifacts(
     canonical_id: str,
     limit: int = Query(default=10, ge=1, le=50),
+    include_superseded: bool = Query(default=False),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    query = (
         select(ResearchArtifact)
         .where(ResearchArtifact.canonical_question_id == canonical_id)
-        .order_by(ResearchArtifact.created_at.desc())
-        .limit(limit)
+    )
+    if not include_superseded:
+        superseded_subq = (
+            select(ResearchArtifact.supersedes_id)
+            .where(ResearchArtifact.supersedes_id.isnot(None))
+            .scalar_subquery()
+        )
+        query = query.where(ResearchArtifact.id.notin_(superseded_subq))
+    result = await db.execute(
+        query.order_by(ResearchArtifact.created_at.desc()).limit(limit)
     )
     return result.scalars().all()
 

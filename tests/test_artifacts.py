@@ -198,3 +198,55 @@ async def test_submit_with_invalid_supersedes_id_returns_422():
 
     assert response.status_code == 422
     assert "supersedes_id" in response.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_artifacts_list_default_excludes_superseded():
+    """Default (include_superseded=false): query uses a NOT IN filter."""
+    import uuid
+    canonical_id = str(uuid.uuid4())
+
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    async def override():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get(f"/canonical/{canonical_id}/artifacts")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 200
+    executed_query = str(mock_db.execute.call_args[0][0])
+    assert "NOT IN" in executed_query.upper() or "notin" in executed_query.lower()
+
+
+@pytest.mark.asyncio
+async def test_artifacts_list_include_superseded_skips_filter():
+    """include_superseded=true: query has no NOT IN filter."""
+    import uuid
+    canonical_id = str(uuid.uuid4())
+
+    mock_db = AsyncMock()
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_db.execute = AsyncMock(return_value=mock_result)
+
+    async def override():
+        yield mock_db
+
+    app.dependency_overrides[get_db] = override
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            r = await client.get(f"/canonical/{canonical_id}/artifacts?include_superseded=true")
+    finally:
+        app.dependency_overrides.clear()
+
+    assert r.status_code == 200
+    executed_query = str(mock_db.execute.call_args[0][0])
+    assert "NOT IN" not in executed_query.upper() and "notin" not in executed_query.lower()
