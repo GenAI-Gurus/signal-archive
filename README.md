@@ -8,7 +8,9 @@ Signal Archive is an open archive of sanitized research artifacts. Before your a
 
 ---
 
-## Install (Claude Code plugin)
+## Install
+
+### Claude Code (plugin)
 
 Run these three commands inside Claude Code:
 
@@ -20,11 +22,15 @@ Run these three commands inside Claude Code:
 
 That's it for read-only search. To enable automatic contribution, [register as a contributor](#register).
 
-### Fallback (Codex CLI or older Claude Code)
+### Codex CLI (shell installer)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/GenAI-Gurus/signal-archive/main/install.sh | bash
+bash <(curl -fsSL https://raw.githubusercontent.com/GenAI-Gurus/signal-archive/main/install.sh)
 ```
+
+This injects instructions into `~/.codex/instructions.md` so Codex searches the archive before research tasks and submits results automatically. The installer also works as a fallback for Claude Code environments without `/plugin` support.
+
+Codex has no native hook system — the integration works by having Codex follow instructions to call `pre_task.py` and `post_task.py` as shell tools.
 
 ---
 
@@ -118,6 +124,12 @@ The sanitizer runs locally before any data leaves your machine.
 - Discovery — emerging topics (recent canonicals with low artifact count)
 - Get Started, API Reference, About pages
 
+### Agent integrations
+- **Claude Code plugin** — hooks into `UserPromptSubmit` (pre-task search + sanitization) and `Stop` (post-task submission). Installed via `/plugin marketplace add`.
+- **Codex CLI integration** — injects instructions into `~/.codex/instructions.md`; Codex calls `pre_task.py` and `post_task.py` as shell tools. Installed via `install.sh`.
+- Both integrations share the same `worker_sdk` and `sanitizer` packages. Artifacts are tagged with `worker_type` (`"claude_code"` or `"codex"`) for provenance tracking.
+- Reuse events are automatically recorded (`POST /canonical/{id}/reuse`) when the pre-task hook surfaces a strong match (≥80% similarity).
+
 ### Infrastructure
 - FastAPI backend on Fly.io (2 machines, rolling deploys)
 - Supabase Postgres + pgvector extension
@@ -131,23 +143,30 @@ The sanitizer runs locally before any data leaves your machine.
 
 ```
 signal-archive/
-├── .claude-plugin/      Plugin manifest + marketplace.json
-├── hooks/               pre_task.py (UserPromptSubmit) + post_task.py (Stop)
-├── commands/            /signal-archive slash command
-├── backend/             FastAPI + SQLAlchemy, deployed on Fly.io
-│   ├── routes/          artifacts, canonical, flags, search, auth, contributors, discovery
-│   ├── quality.py       Automated quality scorer
-│   ├── summarizer.py    LLM synthesis of canonical question findings
-│   ├── canonical.py     Semantic dedup + canonical management
-│   └── migrations/      SQL migration files
-├── batch/               One-off and scheduled batch scripts
-│   ├── backfill.py      Regenerate synthesized summaries
+├── .claude-plugin/           Plugin manifest + marketplace.json
+├── claude_code_integration/  Claude Code hooks (UserPromptSubmit / Stop events)
+│   ├── hooks/                pre_task.py, post_task.py
+│   ├── commands/             /signal-archive slash command
+│   └── setup.py              Installs hooks into Claude Code global config
+├── codex_integration/        Codex CLI integration (instruction injection)
+│   ├── hooks/                pre_task.py, post_task.py (called as shell tools)
+│   ├── instructions_template.md  Injected into ~/.codex/instructions.md
+│   └── setup.py              Idempotent installer for ~/.codex/
+├── install.sh                One-liner installer (Claude Code + Codex CLI)
+├── backend/                  FastAPI + SQLAlchemy, deployed on Fly.io
+│   ├── routes/               artifacts, canonical, flags, search, auth, contributors, discovery
+│   ├── quality.py            Automated quality scorer
+│   ├── summarizer.py         LLM synthesis of canonical question findings
+│   ├── canonical.py          Semantic dedup + canonical management
+│   └── migrations/           SQL migration files
+├── batch/                    One-off and scheduled batch scripts
+│   ├── backfill.py           Regenerate synthesized summaries
 │   └── quality_backfill.py  Score existing artifacts
-├── reputation/          Daily reputation scorer + Fly.io runner
-├── sanitizer/           Local sanitizer (strips private content before submission)
-├── worker_sdk/          Python client for the archive API
-├── tests/               pytest-asyncio test suite
-└── website/             Astro static site on GitHub Pages
+├── reputation/               Daily reputation scorer + Fly.io runner
+├── sanitizer/                Local sanitizer (strips private content before submission)
+├── worker_sdk/               Python client for the archive API
+├── tests/                    pytest-asyncio test suite
+└── website/                  Astro static site on GitHub Pages
 ```
 
 **Tech stack:** Python 3.11, FastAPI, SQLAlchemy async, pgvector on Supabase, Fly.io, Astro 4, OpenAI gpt-4o-mini, Tailwind CSS
@@ -160,8 +179,6 @@ signal-archive/
 - **Search without auth** — semantic search currently requires a JWT. Opening it to anonymous users (with rate limiting) would improve discoverability.
 - **Artifact versioning** — when a canonical has multiple artifacts on the same topic, there's no way to mark one as superseding another. A `supersedes` FK would let the UI hide outdated research.
 - **Worker SDK documentation** — `worker_sdk/` exists but isn't documented. A short guide on how to build a worker that submits research programmatically would unlock third-party contributors.
-- **Reuse tracking from the plugin** — the pre-task hook surfaces results but doesn't automatically record a reuse event. Wiring `POST /canonical/{id}/reuse` into the hook would make reuse counts accurate.
-
 ### Lower priority / ideas
 - **Quality score in canonical synthesis** — currently all artifacts contribute equally to the synthesized summary. Weighting by `quality_score` would surface better research first.
 - **Staleness detection** — flag artifacts as stale automatically when the canonical question's topic is time-sensitive and the `run_date` is older than N months.
