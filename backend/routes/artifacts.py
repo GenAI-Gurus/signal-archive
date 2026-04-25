@@ -35,6 +35,18 @@ async def submit_artifact(
 
     contributor = await get_contributor_from_key(x_api_key, db)
     embedding = await get_embedding(body.cleaned_question)
+
+    # Phase 1: fail fast before creating a canonical — artifact must exist
+    if body.supersedes_id is not None:
+        pre_check = await db.execute(
+            select(ResearchArtifact).where(ResearchArtifact.id == body.supersedes_id)
+        )
+        if not pre_check.scalar_one_or_none():
+            raise HTTPException(
+                status_code=422,
+                detail=f"supersedes_id {body.supersedes_id} does not refer to an existing artifact",
+            )
+
     canonical_id, _ = await find_or_create_canonical(
         db=db,
         question=body.cleaned_question,
@@ -42,6 +54,7 @@ async def submit_artifact(
         summary=body.short_answer,
     )
 
+    # Phase 2: artifact must belong to the resolved canonical
     if body.supersedes_id is not None:
         result = await db.execute(
             select(ResearchArtifact).where(
@@ -52,7 +65,7 @@ async def submit_artifact(
         if not result.scalar_one_or_none():
             raise HTTPException(
                 status_code=422,
-                detail="supersedes_id must refer to an artifact in the same canonical question",
+                detail=f"supersedes_id {body.supersedes_id} must refer to an artifact in the same canonical question",
             )
 
     artifact = ResearchArtifact(

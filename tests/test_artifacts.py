@@ -139,7 +139,7 @@ async def test_submit_with_valid_supersedes_id_returns_201():
     mock_db.add = MagicMock()
     mock_db.commit = AsyncMock()
     mock_db.refresh = AsyncMock()
-    mock_db.execute = AsyncMock(return_value=validate_result)
+    mock_db.execute = AsyncMock(side_effect=[validate_result, validate_result, AsyncMock(), AsyncMock()])
 
     async def override_get_db():
         yield mock_db
