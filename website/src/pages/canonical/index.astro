@@ -45,32 +45,71 @@ import Base from '../../layouts/Base.astro';
     return div;
   }
 
-  function flagKey(artifactId, flagType) {
-    return `flag:${artifactId}:${flagType}`;
-  }
+  // Track flags submitted this session (server enforces uniqueness; this is UX only)
+  const sessionFlags = new Set();
 
-  function buildFlagButtons(artifactId) {
+  function buildFlagButtons(artifact) {
+    const { id: artifactId, useful_count, stale_count, weakly_sourced_count, wrong_count } = artifact;
+    const counts = { useful: useful_count, stale: stale_count, weakly_sourced: weakly_sourced_count, wrong: wrong_count };
+
+    if (!loggedIn) {
+      const nudge = el('div', 'mt-4 pt-4 border-t border-gray-800 text-xs text-gray-600');
+      nudge.innerHTML = `<a href="${BASE}/login" class="text-brand-400 hover:underline">Sign in</a> to flag this research as useful, stale, or incorrect.`;
+      return nudge;
+    }
+
     const flags = [
-      { type: 'useful', label: '👍 Useful', cls: 'text-green-400 border-green-800' },
-      { type: 'stale', label: '⏰ Stale', cls: 'text-yellow-400 border-yellow-800' },
+      { type: 'useful',         label: '👍 Useful',       cls: 'text-green-400 border-green-800' },
+      { type: 'stale',          label: '⏰ Stale',         cls: 'text-yellow-400 border-yellow-800' },
       { type: 'weakly_sourced', label: '⚠️ Weak sources', cls: 'text-orange-400 border-orange-800' },
-      { type: 'wrong', label: '❌ Wrong', cls: 'text-red-400 border-red-800' },
+      { type: 'wrong',          label: '❌ Wrong',         cls: 'text-red-400 border-red-800' },
     ];
     const container = el('div', 'flex gap-2 flex-wrap mt-4 pt-4 border-t border-gray-800');
     flags.forEach(f => {
-      const alreadyFlagged = localStorage.getItem(flagKey(artifactId, f.type));
-      const label = alreadyFlagged ? '✓ ' + f.label : f.label;
+      const key = `${artifactId}:${f.type}`;
+      const alreadyFlagged = sessionFlags.has(key);
+      const count = counts[f.type] || 0;
+      const countLabel = count > 0 ? ` (${count})` : '';
+      const label = alreadyFlagged ? `✓ ${f.label}${countLabel}` : `${f.label}${countLabel}`;
       const btn = el('button', `text-xs border px-3 py-1 rounded-full hover:opacity-80 cursor-pointer ${f.cls}`, label);
       if (alreadyFlagged) btn.disabled = true;
       btn.addEventListener('click', async () => {
-        const ok = await submitFlag(artifactId, f.type);
-        if (ok) {
-          localStorage.setItem(flagKey(artifactId, f.type), '1');
-          btn.textContent = '✓ ' + f.label;
-          btn.disabled = true;
+        btn.disabled = true;
+        btn.textContent = '…';
+        const result = await submitFlag(artifactId, f.type);
+        if (result === 'duplicate') {
+          sessionFlags.add(key);
+          btn.textContent = `✓ ${f.label}${countLabel}`;
+        } else if (result) {
+          sessionFlags.add(key);
+          const newCount = (counts[f.type] || 0) + 1;
+          counts[f.type] = newCount;
+          btn.textContent = `✓ ${f.label} (${newCount})`;
+        } else {
+          btn.disabled = false;
+          btn.textContent = label;
         }
       });
       container.appendChild(btn);
+    });
+    return container;
+  }
+
+  function buildCommunityWarning(artifact) {
+    const warnings = [];
+    if (artifact.wrong_count >= 3) {
+      warnings.push({ icon: '❌', color: 'red', msg: `${artifact.wrong_count} community member${artifact.wrong_count !== 1 ? 's' : ''} flagged this research as incorrect. Treat with caution.` });
+    }
+    if (artifact.weakly_sourced_count >= 3) {
+      warnings.push({ icon: '⚠️', color: 'orange', msg: `${artifact.weakly_sourced_count} community member${artifact.weakly_sourced_count !== 1 ? 's' : ''} flagged the sources as weak.` });
+    }
+    if (!warnings.length) return null;
+    const container = el('div', 'space-y-2 mt-3');
+    warnings.forEach(w => {
+      const banner = el('div', `flex items-start gap-2 rounded-lg px-4 py-3 text-xs bg-${w.color}-900/20 border border-${w.color}-700/30`);
+      banner.appendChild(el('span', `text-${w.color}-400 shrink-0`, w.icon));
+      banner.appendChild(el('span', `text-${w.color}-200/80`, w.msg));
+      container.appendChild(banner);
     });
     return container;
   }
@@ -186,7 +225,9 @@ import Base from '../../layouts/Base.astro';
           card.appendChild(gate);
         }
         card.appendChild(buildProvenance(a));
-        card.appendChild(buildFlagButtons(a.id));
+        const communityWarning = buildCommunityWarning(a);
+        if (communityWarning) card.appendChild(communityWarning);
+        card.appendChild(buildFlagButtons(a));
 
         // Collapsible older version(s) chained from this artifact
         if (a.supersedes_id && byId.has(a.supersedes_id)) {

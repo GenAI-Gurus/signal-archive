@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, ARRAY, ForeignKey
+from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, ARRAY, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
@@ -65,9 +65,13 @@ class ResearchArtifact(Base):
 
 class CommunityFlag(Base):
     __tablename__ = "community_flags"
+    __table_args__ = (
+        UniqueConstraint("artifact_id", "flag_type", "contributor_id", name="uq_flag_per_contributor"),
+    )
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     artifact_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=False)
     flag_type = Column(String, nullable=False)
+    contributor_id = Column(UUID(as_uuid=True), ForeignKey("contributors.id"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class ReuseEvent(Base):

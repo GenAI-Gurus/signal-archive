@@ -65,10 +65,11 @@ export async function getEmerging() {
 export async function submitFlag(artifactId, flagType) {
   const res = await fetch(`${API_URL}/flags`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ artifact_id: artifactId, flag_type: flagType }),
   });
-  return res.ok;
+  if (res.status === 409) return 'duplicate';
+  return res.ok ? true : false;
 }
 
 /** Safe DOM helper — creates an element, sets textContent, adds classes */

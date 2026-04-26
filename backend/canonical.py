@@ -37,7 +37,9 @@ async def find_or_create_canonical(
 
         art_result = await db.execute(
             text(
-                "SELECT short_answer, quality_score FROM research_artifacts"
+                "SELECT short_answer, quality_score,"
+                "       useful_count, wrong_count, weakly_sourced_count, stale_count"
+                " FROM research_artifacts"
                 " WHERE canonical_question_id = :cid"
                 " ORDER BY created_at DESC LIMIT 10"
             ),
@@ -45,7 +47,16 @@ async def find_or_create_canonical(
         )
         existing_rows = art_result.fetchall()
         existing_answers = [r[0] for r in existing_rows]
-        existing_weights = [float(r[1]) if r[1] is not None else 50.0 for r in existing_rows]
+        existing_weights = [
+            max(0.0, min(100.0,
+                (float(r[1]) if r[1] is not None else 50.0)
+                + r[2] * 3       # useful_count bonus
+                - r[3] * 10      # wrong_count penalty
+                - r[4] * 5       # weakly_sourced penalty
+                - r[5] * 3       # stale_count penalty
+            ))
+            for r in existing_rows
+        ]
 
         # New artifact has no quality score yet — use neutral 50.0
         all_answers = [summary] + existing_answers
