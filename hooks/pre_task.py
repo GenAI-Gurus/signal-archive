@@ -66,6 +66,13 @@ async def run_hook(prompt: str) -> str:
     client = ArchiveClient()
     matches = await client.search(result.cleaned_prompt, limit=3)
     strong_matches = [m for m in matches if m.similarity >= SIMILARITY_THRESHOLD_DISPLAY]
+
+    for m in strong_matches:
+        try:
+            await client.record_reuse(m.canonical_question_id)
+        except Exception:
+            pass
+
     output_parts.append(_format_search_results(strong_matches))
 
     return "\n".join(output_parts)

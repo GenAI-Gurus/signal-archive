@@ -10,7 +10,7 @@ import json
 import sys
 from pathlib import Path
 
-HOOKS_DIR = (Path(__file__).parent / "hooks").resolve()
+HOOKS_DIR = (Path(__file__).parent.parent / "hooks").resolve()
 PRE_HOOK_CMD = f"python3 {HOOKS_DIR}/pre_task.py"
 POST_HOOK_CMD = f"python3 {HOOKS_DIR}/post_task.py"
 

@@ -137,7 +137,7 @@ The sanitizer runs locally before any data leaves your machine.
 - **Claude Code plugin** (`.claude-plugin/marketplace.json`, `hooks/hooks.json`) — hooks into `UserPromptSubmit` (pre-task search + sanitization) and `Stop` (post-task submission). Slash commands: `/signal-archive` (manual search), `/signal-archive:login` (browser-based magic-link login).
 - **Codex CLI integration** — `install.sh` injects instructions into `~/.codex/instructions.md`; Codex calls `pre_task.py` and `post_task.py` as shell tools.
 - Both integrations share the same `worker_sdk` and `sanitizer` packages. Artifacts are tagged with `worker_type` (`"claude_code"` or `"codex"`) for provenance.
-- Reuse events are recorded (`POST /canonical/{id}/reuse`) when a pre-task search surfaces a ≥80% match. **Note:** as of this writing the recording is wired in `claude_code_integration/hooks/pre_task.py` (used by `install.sh`) and `codex_integration/hooks/pre_task.py`, but not in the top-level `hooks/pre_task.py` used by the `/plugin` install — see [Next best steps](#next-best-steps).
+- Reuse events are recorded (`POST /canonical/{id}/reuse`) when a pre-task search surfaces a ≥80% match. All three install paths — `/plugin install`, `install.sh` (Claude Code fallback), and Codex — use the same `hooks/` source and record reuse consistently.
 
 ### Privacy & sanitization
 - LLM-based sanitizer (`sanitizer/sanitizer.py`) runs locally via `subprocess` against whichever CLI is available (`claude` or `codex`). Returns a structured `SanitizationResult` (cleaned_prompt, was_modified, removed_categories, safe_to_submit, reason).
@@ -168,8 +168,7 @@ signal-archive/
 │   ├── signal-archive.md     /signal-archive — manual search
 │   └── login.md              /signal-archive:login — browser login
 ├── claude_code_integration/  Claude Code hooks bundled by install.sh (fallback path)
-│   ├── hooks/                pre_task.py, post_task.py
-│   └── setup.py              Writes settings.json hooks (project- or user-scope)
+│   └── setup.py              Writes settings.json hooks pointing at top-level hooks/
 ├── codex_integration/        Codex CLI integration (instruction injection)
 │   ├── hooks/                pre_task.py, post_task.py (called as shell tools)
 │   ├── instructions_template.md  Injected into ~/.codex/instructions.md
@@ -202,8 +201,7 @@ signal-archive/
 
 ## Next best steps
 
-### Hygiene / consistency (do first)
-- **Consolidate the two hook directories.** `hooks/` (used by `/plugin install`) and `claude_code_integration/hooks/` (used by `install.sh`) have drifted — the top-level version is missing the `record_reuse()` call. Pick one source of truth and have both install paths point to it.
+### Hygiene / consistency
 - **Document the `worker_sdk`.** It exists, is async, and could power third-party workers — but there's no doc page or example beyond the in-tree hooks.
 
 ### Surface what's already built
