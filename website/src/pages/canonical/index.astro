@@ -132,8 +132,22 @@ import Base from '../../layouts/Base.astro';
     } else {
       // Build version-chain helpers
       const byId = new Map(artifacts.map(a => [a.id, a]));
+      const STALENESS_DAYS = 180;
+      const staleThreshold = new Date(Date.now() - STALENESS_DAYS * 86400 * 1000);
       const supersededIds = new Set(artifacts.map(a => a.supersedes_id).filter(Boolean));
       const activeArtifacts = artifacts.filter(a => !supersededIds.has(a.id));
+
+      // Staleness banner — show if all active artifacts are older than threshold
+      if (activeArtifacts.length > 0 && activeArtifacts.every(a => new Date(a.run_date) < staleThreshold)) {
+        const newestDate = new Date(Math.max(...activeArtifacts.map(a => new Date(a.run_date)))).toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        const banner = el('div', 'mb-6 bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-5 py-4 flex items-start gap-3');
+        banner.appendChild(el('span', 'text-yellow-400 text-lg shrink-0', '⚠️'));
+        const bannerText = el('div');
+        bannerText.appendChild(el('p', 'text-yellow-200 text-sm font-medium', 'This research may be outdated'));
+        bannerText.appendChild(el('p', 'text-yellow-200/60 text-xs mt-1', `Last updated ${newestDate}. Run fresh research to supersede it and update the archive.`));
+        banner.appendChild(bannerText);
+        content.insertBefore(banner, content.querySelector('h2'));
+      }
 
       activeArtifacts.forEach(a => {
         const card = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 mb-4');

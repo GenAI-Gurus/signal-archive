@@ -8,6 +8,7 @@ import asyncio
 import json
 import sys
 import os
+from datetime import datetime, timezone, timedelta
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -15,6 +16,15 @@ from sanitizer import sanitize_prompt, SanitizationResult
 from worker_sdk import ArchiveClient, SearchMatch
 
 SIMILARITY_THRESHOLD = 0.80
+STALENESS_DAYS = int(os.environ.get("SIGNAL_ARCHIVE_STALENESS_DAYS", "180"))
+
+
+def _is_stale(last_updated_at: str) -> bool:
+    try:
+        dt = datetime.fromisoformat(last_updated_at.replace("Z", "+00:00"))
+        return (datetime.now(timezone.utc) - dt).days > STALENESS_DAYS
+    except Exception:
+        return False
 
 
 def _format_search_results(matches: list[SearchMatch]) -> str:
@@ -22,13 +32,29 @@ def _format_search_results(matches: list[SearchMatch]) -> str:
         return "Signal Archive: No similar research found. This appears to be fresh research territory."
     lines = ["**Signal Archive — Existing Research Found:**\n"]
     base_url = os.environ.get("SIGNAL_ARCHIVE_URL", "https://genai-gurus.com/signal-archive")
+    stale_flags = []
     for i, m in enumerate(matches, 1):
         pct = int(m.similarity * 100)
+        stale = _is_stale(m.last_updated_at)
+        stale_flags.append(stale)
         lines.append(f"{i}. [{m.title}]({base_url}/canonical/?id={m.canonical_question_id})")
         if m.synthesized_summary:
             lines.append(f"   > {m.synthesized_summary[:150]}...")
-        lines.append(f"   Similarity: {pct}% | Artifacts: {m.artifact_count} | Reused: {m.reuse_count}x\n")
-    lines.append("Consider reusing an existing result or proceed with a new run. New runs are automatically contributed to the archive.")
+        age_note = " | ⚠️ May be outdated" if stale else ""
+        lines.append(f"   Similarity: {pct}% | Artifacts: {m.artifact_count} | Reused: {m.reuse_count}x{age_note}\n")
+
+    if stale_flags and all(stale_flags):
+        lines.append(
+            f"⚠️ All cached results are older than {STALENESS_DAYS} days. "
+            "Running fresh research is recommended — the new result will automatically "
+            "supersede the existing entry and update the archive."
+        )
+    elif any(stale_flags):
+        lines.append(
+            "ℹ️ Some results may be outdated. You can reuse a recent result or run new research to update the archive."
+        )
+    else:
+        lines.append("Consider reusing an existing result or proceed with a new run. New runs are automatically contributed to the archive.")
     return "\n".join(lines)
 
 
