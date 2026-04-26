@@ -130,8 +130,23 @@ import Base from '../../layouts/Base.astro';
     if (!artifacts.length) {
       content.appendChild(el('p', 'text-gray-500 italic mb-8', 'No artifacts yet.'));
     } else {
-      artifacts.forEach(a => {
+      // Build version-chain helpers
+      const byId = new Map(artifacts.map(a => [a.id, a]));
+      const supersededIds = new Set(artifacts.map(a => a.supersedes_id).filter(Boolean));
+      const activeArtifacts = artifacts.filter(a => !supersededIds.has(a.id));
+
+      activeArtifacts.forEach(a => {
         const card = el('div', 'bg-gray-900 border border-gray-800 rounded-xl p-6 mb-4');
+
+        // Version banner if this artifact replaced an older one
+        if (a.supersedes_id && byId.has(a.supersedes_id)) {
+          const older = byId.get(a.supersedes_id);
+          const olderDate = new Date(older.run_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const banner = el('div', 'text-xs text-brand-400 mb-3 flex items-center gap-1');
+          banner.textContent = `↩ Replaces version from ${olderDate}`;
+          card.appendChild(banner);
+        }
+
         const dateStr = new Date(a.run_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
         const header = el('div', 'flex items-center gap-3 mb-3');
         header.appendChild(el('span', 'text-xs text-gray-500 font-mono', `${dateStr} · ${a.worker_type}`));
@@ -155,6 +170,23 @@ import Base from '../../layouts/Base.astro';
         }
         card.appendChild(buildProvenance(a));
         card.appendChild(buildFlagButtons(a.id));
+
+        // Collapsible older version(s) chained from this artifact
+        if (a.supersedes_id && byId.has(a.supersedes_id)) {
+          const older = byId.get(a.supersedes_id);
+          const olderDate = new Date(older.run_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+          const oldDetails = document.createElement('details');
+          oldDetails.className = 'mt-4 pt-4 border-t border-gray-800';
+          const oldSummary = el('summary', 'cursor-pointer text-xs text-gray-600 hover:text-gray-400', `Older version · ${olderDate} · ${older.worker_type}`);
+          oldDetails.appendChild(oldSummary);
+          const oldBody = el('div', 'mt-3 space-y-2');
+          oldBody.appendChild(el('p', 'text-gray-400 text-xs leading-relaxed', older.short_answer));
+          const oldBadge = buildQualityBadge(older.quality_score);
+          if (oldBadge) oldBody.appendChild(oldBadge);
+          oldDetails.appendChild(oldBody);
+          card.appendChild(oldDetails);
+        }
+
         content.appendChild(card);
       });
     }

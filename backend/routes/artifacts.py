@@ -54,7 +54,27 @@ async def submit_artifact(
         summary=body.short_answer,
     )
 
-    # Phase 2: artifact must belong to the resolved canonical
+    # Auto-supersede: if this contributor already has a non-superseded artifact on this
+    # canonical and the client didn't explicitly set supersedes_id, link automatically.
+    if body.supersedes_id is None:
+        already_superseded = select(ResearchArtifact.supersedes_id).where(
+            ResearchArtifact.supersedes_id.isnot(None)
+        )
+        prev_result = await db.execute(
+            select(ResearchArtifact.id)
+            .where(
+                ResearchArtifact.canonical_question_id == canonical_id,
+                ResearchArtifact.contributor_id == contributor.id,
+                ~ResearchArtifact.id.in_(already_superseded),
+            )
+            .order_by(ResearchArtifact.created_at.desc())
+            .limit(1)
+        )
+        prev_id = prev_result.scalar_one_or_none()
+        if prev_id:
+            body.supersedes_id = prev_id
+
+    # Phase 2: explicitly-provided supersedes_id must belong to the resolved canonical
     if body.supersedes_id is not None:
         result = await db.execute(
             select(ResearchArtifact).where(

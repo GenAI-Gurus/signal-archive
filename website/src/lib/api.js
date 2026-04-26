@@ -21,7 +21,7 @@ export async function getCanonical(id) {
 }
 
 export async function getCanonicalArtifacts(id) {
-  const res = await fetch(`${API_URL}/canonical/${id}/artifacts`);
+  const res = await fetch(`${API_URL}/canonical/${id}/artifacts?include_superseded=true`);
   if (!res.ok) return [];
   return res.json();
 }
