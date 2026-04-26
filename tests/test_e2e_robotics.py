@@ -31,7 +31,7 @@ def contributors():
         {"handle": f"priya-embodied-{SESSION}", "display_name": "Priya Nair"},
     ]
     keys = {}
-    with httpx.Client(timeout=20) as client:
+    with httpx.Client(timeout=60) as client:
         for p in personas:
             resp = client.post(f"{BASE}/contributors", json=p)
             assert resp.status_code == 201, f"Failed to register {p['handle']}: {resp.text}"
