@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import Column, String, Integer, Float, Boolean, Text, DateTime, ARRAY, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy.orm import relationship
 from pgvector.sqlalchemy import Vector
 from database import Base
 
@@ -55,6 +56,12 @@ class ResearchArtifact(Base):
     supersedes_id = Column(UUID(as_uuid=True), ForeignKey("research_artifacts.id"), nullable=True)
     quality_score = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    contributor = relationship("Contributor", foreign_keys=[contributor_id], lazy="joined")
+
+    @property
+    def contributor_handle(self):
+        return self.contributor.handle if self.contributor else None
 
 class CommunityFlag(Base):
     __tablename__ = "community_flags"

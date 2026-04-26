@@ -27,12 +27,15 @@ async def search_archive(
 
     if sort == "relevance":
         result = await db.execute(text("""
-            SELECT id, title, synthesized_summary,
-                   1 - (embedding <=> CAST(:vec AS vector)) AS similarity,
-                   artifact_count, reuse_count, last_updated_at
-            FROM canonical_questions
-            WHERE embedding IS NOT NULL
-            ORDER BY embedding <=> CAST(:vec AS vector)
+            SELECT c.id, c.title, c.synthesized_summary,
+                   1 - (c.embedding <=> CAST(:vec AS vector)) AS similarity,
+                   c.artifact_count, c.reuse_count, c.last_updated_at,
+                   COALESCE(AVG(ra.quality_score), 0) AS avg_quality
+            FROM canonical_questions c
+            LEFT JOIN research_artifacts ra ON ra.canonical_question_id = c.id
+            WHERE c.embedding IS NOT NULL
+            GROUP BY c.id
+            ORDER BY c.embedding <=> CAST(:vec AS vector)
             LIMIT :limit
         """), {"vec": vector_literal, "limit": limit})
     elif sort == "quality":
@@ -60,16 +63,19 @@ async def search_archive(
     else:  # reuse
         result = await db.execute(text("""
             WITH candidates AS (
-                SELECT id, title, synthesized_summary,
-                       1 - (embedding <=> CAST(:vec AS vector)) AS similarity,
-                       artifact_count, reuse_count, last_updated_at
-                FROM canonical_questions
-                WHERE embedding IS NOT NULL
-                ORDER BY embedding <=> CAST(:vec AS vector)
+                SELECT c.id, c.title, c.synthesized_summary,
+                       1 - (c.embedding <=> CAST(:vec AS vector)) AS similarity,
+                       c.artifact_count, c.reuse_count, c.last_updated_at,
+                       COALESCE(AVG(ra.quality_score), 0) AS avg_quality
+                FROM canonical_questions c
+                LEFT JOIN research_artifacts ra ON ra.canonical_question_id = c.id
+                WHERE c.embedding IS NOT NULL
+                GROUP BY c.id
+                ORDER BY c.embedding <=> CAST(:vec AS vector)
                 LIMIT :pool
             )
             SELECT id, title, synthesized_summary, similarity,
-                   artifact_count, reuse_count, last_updated_at
+                   artifact_count, reuse_count, last_updated_at, avg_quality
             FROM candidates
             WHERE similarity >= :min_sim
             ORDER BY reuse_count DESC
@@ -87,6 +93,7 @@ async def search_archive(
             artifact_count=row[4],
             reuse_count=row[5],
             last_updated_at=row[6],
+            avg_quality=round(float(row[7]), 1) if row[7] else None,
         )
         for row in rows
     ]

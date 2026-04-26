@@ -77,6 +77,7 @@ class SearchResult(BaseModel):
     similarity: float
     artifact_count: int
     reuse_count: int
+    avg_quality: Optional[float] = None
     last_updated_at: datetime
 
 class ContributorResponse(BaseModel):

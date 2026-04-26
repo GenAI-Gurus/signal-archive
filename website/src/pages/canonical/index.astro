@@ -148,8 +148,11 @@ import Base from '../../layouts/Base.astro';
         }
 
         const dateStr = new Date(a.run_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-        const header = el('div', 'flex items-center gap-3 mb-3');
+        const header = el('div', 'flex items-center gap-3 mb-3 flex-wrap');
         header.appendChild(el('span', 'text-xs text-gray-500 font-mono', `${dateStr} · ${a.worker_type}`));
+        if (a.contributor_handle) {
+          header.appendChild(link(`${BASE}/contributor/?handle=${a.contributor_handle}`, 'text-xs text-brand-500 hover:text-brand-300 font-mono', `@${a.contributor_handle}`));
+        }
         const badge = buildQualityBadge(a.quality_score);
         if (badge) header.appendChild(badge);
         card.appendChild(header);
