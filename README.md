@@ -103,7 +103,7 @@ The sanitizer runs locally before any data leaves your machine.
 ### Core archive
 - **Canonical question clustering** — semantic deduplication via pgvector. New submissions are matched to existing questions; a new canonical is created only when nothing similar exists. Threshold configurable via `SIMILARITY_THRESHOLD` env var (default 0.85).
 - **Research artifacts** — full body (≤100k chars), short answer, citations (≤50), source domains, provenance (worker_type, run_date, model_info), clarifying Q&A (≤20 pairs).
-- **Synthesized summaries** — when a canonical question accumulates multiple artifacts, gpt-4o-mini generates a 2–3 sentence synthesis. Summaries are **quality-weighted**: higher-`quality_score` artifacts get more influence in the synthesis. Shown on the browse page.
+- **Synthesized summaries** — when a canonical question accumulates multiple artifacts, gpt-4o-mini generates a 2–3 sentence synthesis. Summaries are **quality-weighted and community-adjusted**: each artifact's effective weight is `quality_score + useful*3 − wrong*10 − weakly_sourced*5 − stale*3` (clamped 0–100), so trusted research dominates the synthesis and flagged-wrong research is heavily down-weighted. Shown on the browse page.
 - **Related questions** — vector similarity surfaces the 5 most similar canonical questions on each artifact page.
 - **Versioning at the data layer** — artifacts have `supersedes_id` (self-FK, two-phase validated: must exist + must be in the same canonical) and a free-form `version` string. The `/canonical/{id}/artifacts` endpoint hides superseded artifacts by default (`include_superseded=true` to opt in). UI does not yet surface a "supersede" action — see [Next best steps](#next-best-steps).
 
@@ -114,7 +114,7 @@ The sanitizer runs locally before any data leaves your machine.
   - Faithfulness: up to 30 pts (gpt-4o-mini checks whether the short answer reflects the full body — YES/PARTIAL/NO)
   - Score shown as a colored badge (High ≥70 / Medium ≥40 / Low <40) on each artifact card.
 - **Search sort modes** — `relevance` (default), `quality` (avg artifact quality), or `reuse`. Non-relevance sorts apply a 0.5 similarity floor and re-rank a top-50 candidate pool.
-- **Community flags** — readers flag artifacts as Useful, Stale, Weak sources, or Wrong. Counts persist on the artifact and feed contributor reputation. Flag state persists in `localStorage` so buttons stay disabled across reloads without needing an account.
+- **Community flags** — signed-in readers flag artifacts as Useful, Stale, Weak sources, or Wrong. Auth is enforced server-side (JWT for web, `X-API-Key` for agents); a partial unique index `(artifact_id, flag_type, contributor_id)` deduplicates per contributor (returns 409 on a repeat). Flag counts feed both the synthesis weights and contributor reputation, and the canonical page shows warning banners when `wrong_count ≥ 3` (red) or `weakly_sourced_count ≥ 3` (orange).
 - **Contributor reputation** — daily Fly.io scheduled job recomputes a 0–100 score from reuse ratio + community-flag ratio. Surfaced on the leaderboard.
 
 ### Identity & accounts
@@ -200,9 +200,6 @@ signal-archive/
 ---
 
 ## Next best steps
-
-### Hygiene / consistency
-- **Document the `worker_sdk`.** It exists, is async, and could power third-party workers — but there's no doc page or example beyond the in-tree hooks.
 
 ### Surface what's already built
 - **Wire up versioning in the UI/hooks.** `supersedes_id` validation, the `version` field, and the default-hide-superseded behavior are all in production at the data layer. No UI lets a contributor mark "this supersedes that," and no hook auto-supersedes when the same contributor reruns the same canonical question. A simple heuristic — same handle, same canonical, prior artifact within N days — would activate it immediately.

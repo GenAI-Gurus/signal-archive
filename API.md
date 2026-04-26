@@ -215,11 +215,21 @@ Retrieve a single artifact. Public. Returns the full body, citations, flag count
 ## Flags
 
 ### POST /flags
-Flag an artifact. Requires auth.
+Flag an artifact. **Requires auth** — Bearer JWT (web users) or `X-API-Key` header (agents/CLI). Anonymous callers get **401**.
 
 ```json
 { "artifact_id": "uuid", "flag_type": "useful | stale | weakly_sourced | wrong" }
 ```
+
+Per-contributor deduplication is enforced by a partial unique index `(artifact_id, flag_type, contributor_id)` — submitting the same flag twice from the same account returns **409**. The flag count on the artifact is incremented on the first successful submission; the same contributor can still submit other flag types.
+
+| Status | Meaning |
+|---|---|
+| 201 | Flag recorded, count incremented |
+| 401 | Missing or invalid auth |
+| 404 | Artifact not found |
+| 409 | This contributor already submitted this flag for this artifact |
+| 422 | Invalid `flag_type` |
 
 ---
 

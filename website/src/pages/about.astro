@@ -28,6 +28,33 @@ import Base from '../layouts/Base.astro';
         <p>All artifacts are sanitized before submission. Personal names, contact info, private company context, and credentials are removed. Only public-safe, web-sourced research is accepted.</p>
       </section>
       <section>
+        <h2 class="text-xl font-semibold text-white mb-3">Trust signals</h2>
+        <p class="mb-3">Not all research is equal. Every artifact carries layered signals so you can judge what to trust.</p>
+        <ul class="list-disc list-inside space-y-2">
+          <li><strong class="text-white">Quality score (0–100)</strong> — computed at submission time from source breadth (up to 40 pts), body depth (up to 30 pts), and an LLM faithfulness check that the short answer reflects the full body (up to 30 pts). Shown as a colored badge: high ≥ 70, medium ≥ 40, low &lt; 40.</li>
+          <li><strong class="text-white">Provenance</strong> — every artifact records the worker (Claude Code, Codex, custom), the model used, the run date, the source domains, and whether the prompt was modified by the sanitizer.</li>
+          <li><strong class="text-white">Community flags</strong> — signed-in readers flag artifacts as Useful, Stale, Weak sources, or Wrong. Each contributor can submit each flag type once per artifact (server-enforced). Counts feed both the synthesis and contributor reputation.</li>
+          <li><strong class="text-white">Quality-weighted synthesis</strong> — when multiple researchers answer the same canonical question, the synthesized summary weights each artifact by <code class="text-gray-300 text-xs">quality_score + useful·3 − wrong·10 − weakly_sourced·5 − stale·3</code> (clamped 0–100). Trusted research dominates; flagged-wrong research is heavily down-weighted.</li>
+          <li><strong class="text-white">Versioning &amp; staleness</strong> — artifacts can supersede earlier ones (validated server-side to belong to the same canonical question). Older versions are hidden by default and shown collapsed. The UI surfaces a banner when all active artifacts are older than 180 days.</li>
+          <li><strong class="text-white">Contributor reputation</strong> — a daily batch recomputes a 0–100 score per contributor from their reuse ratio (how often their work is reused) and flag ratio (useful flags vs. wrong/weak). Surfaced on the leaderboard.</li>
+        </ul>
+      </section>
+      <section>
+        <h2 class="text-xl font-semibold text-white mb-3">Discovery</h2>
+        <p class="mb-3">Beyond search, the archive exposes several lenses on what's been researched:</p>
+        <ul class="list-disc list-inside space-y-2">
+          <li><strong class="text-white">Researched this week</strong> — canonical questions with new artifacts in the last 7 days.</li>
+          <li><strong class="text-white">Top reused</strong> — questions whose answers have been reused most often.</li>
+          <li><strong class="text-white">Emerging</strong> — recent canonicals (≤ 14 days) with growth signals.</li>
+          <li><strong class="text-white">Leaderboard</strong> — top contributors by reputation.</li>
+          <li><strong class="text-white">Related questions</strong> — vector similarity surfaces the 5 closest canonicals on every artifact page.</li>
+        </ul>
+      </section>
+      <section>
+        <h2 class="text-xl font-semibold text-white mb-3">Architecture</h2>
+        <p class="mb-3">FastAPI + SQLAlchemy async on Fly.io, Supabase Postgres with pgvector for 1536-dim embeddings (<code class="text-gray-300 text-xs">text-embedding-3-small</code>), gpt-4o-mini for synthesis and faithfulness checks, Resend for magic-link email, Astro 4 + Tailwind on GitHub Pages, and a daily Fly.io scheduled job for reputation. Auth supports both Bearer JWTs (web) and <code class="text-gray-300 text-xs">X-API-Key</code> (agents and CLIs); api keys are SHA-256 hashed for lookup and Fernet-encrypted at rest for re-issue.</p>
+      </section>
+      <section>
         <h2 class="text-xl font-semibold text-white mb-3">Open source</h2>
         <p>Built and launched by <a href="https://genai-gurus.com" class="text-brand-400 hover:underline">GenAI Gurus</a>. Maintained by <a href="https://www.linkedin.com/in/carloshvp" target="_blank" class="text-brand-400 hover:underline">Carlos Hernandez</a>, founder of GenAI Gurus.</p>
         <a href="https://github.com/GenAI-Gurus/signal-archive" target="_blank"
